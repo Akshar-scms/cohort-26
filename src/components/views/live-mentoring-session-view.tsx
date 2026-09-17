@@ -1,19 +1,17 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect, useTransition } from 'react'
 import {
-  Users,
+  User,
   CheckCircle2,
-  AlertCircle,
   Save,
   Plus,
   Trash2,
-  ExternalLink,
   MessageSquare,
   FileText,
-  Clock,
   Sparkles,
-  ChevronRight,
+  MapPin,
+  Loader2,
   BookOpen,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -21,476 +19,495 @@ import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { SessionTimer } from '@/components/mentoring/session-timer'
+import { getSessionStudents, addSessionQuestion, removeSessionQuestion, completeSession } from '@/app/actions/live-session-actions'
+import { addSkill, removeSkill, addSpcNote, updateStudentBySession } from '@/app/actions/student-actions'
 
-export function LiveMentoringSessionView() {
-  // Sample 4-on-1 session students
-  const [students, setStudents] = useState([
-    {
-      id: '1',
-      rollNo: '24MCA001',
-      name: 'Aarav Shah',
-      email: '24mca001@nirmauni.ac.in',
-      cgpa: '8.85',
-      backlogs: 0,
-      targetRole: 'Full Stack SDE',
-      placementStatus: 'INTERVIEW',
-      resumeUrl: 'https://drive.google.com/resume-aarav.pdf',
-      githubUrl: 'https://github.com/aarav-shah',
-      skills: [
-        { name: 'TypeScript', proficiency: 'ADVANCED', category: 'PROGRAMMING_LANGUAGE' },
-        { name: 'Next.js', proficiency: 'ADVANCED', category: 'FRAMEWORK_LIBRARY' },
-        { name: 'PostgreSQL', proficiency: 'INTERMEDIATE', category: 'DATABASE' },
-        { name: 'Docker', proficiency: 'INTERMEDIATE', category: 'CLOUD_DEVOPS' },
-      ],
-      questionsAsked: [
-        'How does Next.js Server Components differ from Client hydration?',
-        'Optimize SQL query with composite indexes in PostgreSQL.',
-      ],
-      currentNote: 'Strong frontend fundamentals. Suggested practicing Trie & Graph traversal algorithms before next round.',
-      pastNotes: [
-        { date: '10 Sept 2026', author: 'Prof. Riya Mehta', note: 'Resume reviewed. Advised adding production metrics to portfolio.' },
-      ],
-    },
-    {
-      id: '2',
-      rollNo: '24MCA014',
-      name: 'Priya Joshi',
-      email: '24mca014@nirmauni.ac.in',
-      cgpa: '9.20',
-      backlogs: 0,
-      targetRole: 'Backend Engineer',
-      placementStatus: 'SHORTLISTED',
-      resumeUrl: 'https://drive.google.com/resume-priya.pdf',
-      githubUrl: 'https://github.com/priyajoshi-dev',
-      skills: [
-        { name: 'Java', proficiency: 'EXPERT', category: 'PROGRAMMING_LANGUAGE' },
-        { name: 'Spring Boot', proficiency: 'ADVANCED', category: 'FRAMEWORK_LIBRARY' },
-        { name: 'Kafka', proficiency: 'INTERMEDIATE', category: 'DATABASE' },
-        { name: 'AWS', proficiency: 'INTERMEDIATE', category: 'CLOUD_DEVOPS' },
-      ],
-      questionsAsked: [
-        'Explain event streaming architecture with Apache Kafka and partition rebalancing.',
-      ],
-      currentNote: 'Shortlisted for Amazon interview loop. Recommended distributed systems prep.',
-      pastNotes: [
-        { date: '04 Sept 2026', author: 'Prof. Kunal Joshi', note: 'Excellent system design clarity.' },
-      ],
-    },
-    {
-      id: '3',
-      rollNo: '24MCA028',
-      name: 'Dev Patel',
-      email: '24mca028@nirmauni.ac.in',
-      cgpa: '8.40',
-      backlogs: 0,
-      targetRole: 'Backend Developer',
-      placementStatus: 'PREPARATION',
-      resumeUrl: 'https://drive.google.com/resume-dev.pdf',
-      githubUrl: 'https://github.com/devpatel',
-      skills: [
-        { name: 'Python', proficiency: 'ADVANCED', category: 'PROGRAMMING_LANGUAGE' },
-        { name: 'FastAPI', proficiency: 'INTERMEDIATE', category: 'FRAMEWORK_LIBRARY' },
-        { name: 'Redis', proficiency: 'INTERMEDIATE', category: 'DATABASE' },
-      ],
-      questionsAsked: [],
-      currentNote: 'Needs resume refinement for DSA projects.',
-      pastNotes: [],
-    },
-    {
-      id: '4',
-      rollNo: '24MCA035',
-      name: 'Kunal Verma',
-      email: '24mca035@nirmauni.ac.in',
-      cgpa: '7.95',
-      backlogs: 0,
-      targetRole: 'Frontend Developer',
-      placementStatus: 'APPLIED',
-      resumeUrl: 'https://drive.google.com/resume-kunal.pdf',
-      githubUrl: 'https://github.com/kunalv',
-      skills: [
-        { name: 'React', proficiency: 'ADVANCED', category: 'FRAMEWORK_LIBRARY' },
-        { name: 'Node.js', proficiency: 'INTERMEDIATE', category: 'PROGRAMMING_LANGUAGE' },
-      ],
-      questionsAsked: [],
-      currentNote: '',
-      pastNotes: [],
-    },
-  ])
+interface LiveMentoringSessionViewProps {
+  spcId: string
+  spcName: string
+}
 
-  const [activeStudentIndex, setActiveStudentIndex] = useState(0)
-  const [newSkillName, setNewSkillName] = useState('')
+const PROFICIENCY_COLORS: Record<string, string> = {
+  BEGINNER:     'border-[#FFB224]/40 text-[#FFB224] bg-[#FFB224]/10',
+  INTERMEDIATE: 'border-[#0091FF]/40 text-[#0091FF] bg-[#0091FF]/10',
+  ADVANCED:     'border-[#30A46C]/40 text-[#30A46C] bg-[#30A46C]/10',
+}
+
+const PLACEMENT_STATUS_OPTIONS = [
+  'NOT_STARTED', 'PREPARATION', 'APPLIED', 'INTERVIEW', 'SHORTLISTED', 'OFFERED', 'PLACED'
+]
+
+const SKILL_CATEGORIES = [
+  { value: 'PROGRAMMING_LANGUAGE', label: 'Programming Language' },
+  { value: 'FRAMEWORK_LIBRARY',    label: 'Framework / Library' },
+  { value: 'DATABASE',             label: 'Database' },
+  { value: 'CLOUD_DEVOPS',         label: 'Cloud / DevOps' },
+  { value: 'DATA_SCIENCE_ML',      label: 'Data Science / ML' },
+  { value: 'SOFT_SKILL',           label: 'Soft Skill' },
+  { value: 'OTHER',                label: 'Other' },
+]
+
+function formatTime(t: string) {
+  const [h, m] = t.split(':').map(Number)
+  const period = h >= 12 ? 'PM' : 'AM'
+  return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${period}`
+}
+
+export function LiveMentoringSessionView({ spcId, spcName }: LiveMentoringSessionViewProps) {
+  const [sessions, setSessions]         = useState<any[]>([])
+  const [loading, setLoading]           = useState(true)
+  const [activeIndex, setActiveIndex]   = useState(0)
+  const [isPending, startTransition]    = useTransition()
+  const [saveSuccess, setSaveSuccess]   = useState(false)
+
+  // New skill inputs
+  const [newSkillName, setNewSkillName]           = useState('')
+  const [newSkillCategory, setNewSkillCategory]   = useState('PROGRAMMING_LANGUAGE')
+  const [newSkillProficiency, setNewSkillProficiency] = useState<'BEGINNER'|'INTERMEDIATE'|'ADVANCED'>('INTERMEDIATE')
+
+  // New question input
   const [newQuestion, setNewQuestion] = useState('')
-  const [saveSuccess, setSaveSuccess] = useState(false)
 
-  const activeStudent = students[activeStudentIndex]
+  // SPC note
+  const [noteText, setNoteText] = useState('')
 
-  const handleUpdateStudent = (field: string, value: any) => {
-    const updated = [...students]
-    updated[activeStudentIndex] = {
-      ...updated[activeStudentIndex],
-      [field]: value,
-    }
-    setStudents(updated)
+  // Profile editable fields
+  const [editCgpa, setEditCgpa]               = useState('')
+  const [editBacklogs, setEditBacklogs]       = useState('')
+  const [editTargetRole, setEditTargetRole]   = useState('')
+  const [editStatus, setEditStatus]           = useState('')
+
+  const todayIso = new Date().toISOString().split('T')[0]
+
+  const load = () => {
+    setLoading(true)
+    getSessionStudents(spcId, todayIso).then((data) => {
+      setSessions(data)
+      setLoading(false)
+    })
   }
+
+  useEffect(() => { load() }, [spcId])
+
+  // Sync editable fields when active session changes
+  useEffect(() => {
+    const s = sessions[activeIndex]?.student
+    if (s) {
+      setEditCgpa(s.cgpa ?? '')
+      setEditBacklogs(String(s.backlogs ?? 0))
+      setEditTargetRole(s.targetRole ?? '')
+      setEditStatus(s.placementStatus ?? 'NOT_STARTED')
+    }
+  }, [activeIndex, sessions])
+
+  const active = sessions[activeIndex]
+  const student = active?.student
+  const studentUser = student?.user
 
   const handleAddSkill = () => {
-    if (!newSkillName.trim()) return
-    const updated = [...students]
-    updated[activeStudentIndex].skills.push({
-      name: newSkillName.trim(),
-      proficiency: 'INTERMEDIATE',
-      category: 'PROGRAMMING_LANGUAGE',
+    if (!newSkillName.trim() || !student?.id) return
+    startTransition(async () => {
+      await addSkill(student.id, newSkillName, newSkillCategory as any, newSkillProficiency)
+      setNewSkillName('')
+      load()
     })
-    setStudents(updated)
-    setNewSkillName('')
   }
 
-  const handleRemoveSkill = (skillIndex: number) => {
-    const updated = [...students]
-    updated[activeStudentIndex].skills.splice(skillIndex, 1)
-    setStudents(updated)
+  const handleRemoveSkill = (skillId: string) => {
+    startTransition(async () => {
+      await removeSkill(skillId)
+      load()
+    })
   }
 
   const handleAddQuestion = () => {
-    if (!newQuestion.trim()) return
-    const updated = [...students]
-    updated[activeStudentIndex].questionsAsked.push(newQuestion.trim())
-    setStudents(updated)
-    setNewQuestion('')
+    if (!newQuestion.trim() || !active?.bookingId) return
+    startTransition(async () => {
+      await addSessionQuestion(active.bookingId, newQuestion)
+      setNewQuestion('')
+      load()
+    })
   }
 
-  const handleSaveNotes = () => {
-    setSaveSuccess(true)
-    setTimeout(() => setSaveSuccess(false), 2000)
+  const handleRemoveQuestion = (qId: string) => {
+    startTransition(async () => {
+      await removeSessionQuestion(qId)
+      load()
+    })
   }
 
+  const handleSaveNote = () => {
+    if (!noteText.trim() || !student?.id) return
+    startTransition(async () => {
+      await addSpcNote(student.id, spcId, noteText)
+      setNoteText('')
+      setSaveSuccess(true)
+      setTimeout(() => setSaveSuccess(false), 2000)
+      load()
+    })
+  }
+
+  const handleSaveProfile = () => {
+    if (!student?.id) return
+    startTransition(async () => {
+      await updateStudentBySession(student.id, {
+        cgpa: editCgpa || undefined,
+        backlogs: editBacklogs ? Number(editBacklogs) : undefined,
+        targetRole: editTargetRole || undefined,
+        placementStatus: editStatus as any,
+      })
+      setSaveSuccess(true)
+      setTimeout(() => setSaveSuccess(false), 2000)
+      load()
+    })
+  }
+
+  const handleCompleteSession = () => {
+    if (!active?.bookingId) return
+    startTransition(async () => {
+      await completeSession(active.bookingId)
+      load()
+    })
+  }
+
+  // ─── Loading ──────────────────────────────────────────────────
+  if (loading) {
+    return (
+      <div className="w-full max-w-[1200px] mx-auto p-8 flex items-center justify-center py-24 text-[#6E6E78]">
+        <Loader2 className="w-5 h-5 animate-spin mr-2" />
+        <span className="text-[13px]">Loading today&apos;s session schedule...</span>
+      </div>
+    )
+  }
+
+  // ─── No sessions today ────────────────────────────────────────
+  if (sessions.length === 0) {
+    return (
+      <div className="w-full max-w-[1200px] mx-auto p-8">
+        <div className="p-5 rounded-xl bg-[#121214] border border-[#26262A] mb-6 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-[#6E56CF]/15 border border-[#6E56CF]/40 flex items-center justify-center text-[#cbbeff]">
+            <User className="w-5 h-5" />
+          </div>
+          <div>
+            <h1 className="text-[17px] font-semibold text-[#EDEDEF]">Live Mentoring Session Console</h1>
+            <p className="text-[12px] text-[#A0A0AB] font-mono mt-0.5">No booked sessions for today · {todayIso}</p>
+          </div>
+        </div>
+        <Card className="bg-[#121214] border-[#26262A] p-10 text-center flex flex-col items-center gap-3">
+          <BookOpen className="w-8 h-8 text-[#34343A]" />
+          <div className="text-[15px] font-medium text-[#EDEDEF]">No sessions scheduled for today</div>
+          <p className="text-[12px] text-[#A0A0AB]">
+            Students will appear here once they book one of your active mentoring slots.
+          </p>
+        </Card>
+      </div>
+    )
+  }
+
+  // ─── Main Console ─────────────────────────────────────────────
   return (
     <div className="w-full max-w-[1200px] mx-auto p-8 flex flex-col gap-6 relative">
-      {/* Top Banner: Active Slot Header */}
+      {/* Floating Timer */}
+      <SessionTimer initialMinutes={active?.durationMinutes ?? 15} />
+
+      {/* Top Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-xl bg-[#121214] border border-[#26262A]">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-[#6E56CF]/15 border border-[#6E56CF]/40 flex items-center justify-center text-[#cbbeff]">
-            <Users className="w-5 h-5" />
+            <User className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-[17px] font-semibold text-[#EDEDEF]">
-                Live Mentoring Session Console
-              </h1>
+              <h1 className="text-[17px] font-semibold text-[#EDEDEF]">Live Mentoring Console</h1>
               <span className="w-2 h-2 rounded-full bg-[#30A46C] animate-pulse" />
-              <span className="text-[11px] font-mono text-[#30A46C] uppercase font-medium">
-                Live Slot
-              </span>
+              <span className="text-[11px] font-mono text-[#30A46C] uppercase font-medium">Live</span>
             </div>
             <p className="text-[12px] text-[#A0A0AB] font-mono mt-0.5">
-              Thursday, 18 Sept · 3:15 – 3:30 PM (15-min 4-on-1 Group)
+              {todayIso} · {sessions.length} session{sessions.length !== 1 ? 's' : ''} today
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
           <Button
-            variant="default"
+            variant={saveSuccess ? 'outline' : 'default'}
             size="sm"
-            onClick={handleSaveNotes}
-            className="gap-1.5 h-8 text-[12px]"
+            onClick={handleSaveProfile}
+            disabled={isPending}
+            className={saveSuccess ? 'border-[#30A46C]/40 text-[#30A46C]' : ''}
           >
-            <Save className="w-3.5 h-3.5" />
-            <span>{saveSuccess ? 'Saved to DB!' : 'Save & Sync Candidate Data'}</span>
+            {saveSuccess ? (
+              <><CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />Saved</>
+            ) : isPending ? (
+              <><Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />Saving...</>
+            ) : (
+              <><Save className="w-3.5 h-3.5 mr-1.5" />Save Profile</>
+            )}
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleCompleteSession} disabled={isPending}>
+            Complete Session
           </Button>
         </div>
       </div>
 
-      {/* 4-on-1 Student Selection Strip */}
-      <div className="flex flex-col gap-2">
-        <div className="text-[11px] uppercase tracking-wider text-[#6E6E78] font-medium font-mono">
-          Session Candidates (Select to review & update data during slot)
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {students.map((st, idx) => {
-            const isSelected = activeStudentIndex === idx
-            return (
-              <div
-                key={st.id}
-                onClick={() => setActiveStudentIndex(idx)}
-                className={`p-3.5 rounded-xl border cursor-pointer transition-all flex items-center gap-3 ${
-                  isSelected
-                    ? 'bg-[#18181B] border-[#6E56CF] shadow-lg'
-                    : 'bg-[#121214] border-[#26262A] hover:border-[#34343A]'
-                }`}
-              >
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-mono font-medium ${
-                    isSelected
-                      ? 'bg-[#6E56CF] text-white'
-                      : 'bg-[#18181B] text-[#A0A0AB] border border-[#26262A]'
-                  }`}
-                >
-                  {st.name
-                    .split(' ')
-                    .map((n) => n[0])
-                    .join('')}
-                </div>
-                <div className="flex flex-col min-w-0">
-                  <span
-                    className={`text-[13px] font-medium truncate leading-tight ${
-                      isSelected ? 'text-[#EDEDEF]' : 'text-[#A0A0AB]'
-                    }`}
-                  >
-                    {st.name}
-                  </span>
-                  <span className="text-[11px] text-[#6E6E78] font-mono truncate">
-                    {st.rollNo} · CGPA {st.cgpa}
-                  </span>
-                </div>
-              </div>
-            )
-          })}
-        </div>
+      {/* Session Tabs */}
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {sessions.map((s, idx) => (
+          <button
+            key={s.bookingId}
+            onClick={() => setActiveIndex(idx)}
+            className={`shrink-0 px-4 h-9 rounded-lg border text-[13px] font-medium transition-all ${
+              activeIndex === idx
+                ? 'bg-[#6E56CF]/15 border-[#6E56CF] text-[#cbbeff]'
+                : 'bg-[#121214] border-[#26262A] text-[#A0A0AB] hover:border-[#34343A] hover:text-[#EDEDEF]'
+            }`}
+          >
+            {s.student?.user?.name?.split(' ')[0] ?? 'Student'} · {formatTime(s.slotTime)}
+          </button>
+        ))}
       </div>
 
-      {/* Main Working Grid: Left (Candidate Data Management) & Right (SPC Notes & Assessment) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start pb-20">
-        {/* Left Column (7 cols): Data Entry by SPC */}
-        <div className="lg:col-span-7 flex flex-col gap-5">
-          {/* Card: Academic & Placement Data */}
-          <Card className="p-5 bg-[#121214] border-[#26262A] flex flex-col gap-4">
-            <div className="flex items-center justify-between border-b border-[#26262A] pb-3">
-              <div>
-                <h2 className="text-[15px] font-semibold text-[#EDEDEF]">
-                  Academic & Placement Info
-                </h2>
-                <p className="text-[11px] text-[#6E6E78]">
-                  Managed and verified exclusively by SPC coordinators.
-                </p>
+      {/* Content: 2 columns */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        {/* LEFT: Student Info + Profile Edit */}
+        <div className="flex flex-col gap-5">
+
+          {/* Student header */}
+          <Card className="bg-[#121214] border-[#26262A] p-5">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-[#18181B] border border-[#26262A] flex items-center justify-center font-mono text-[13px] text-[#EDEDEF] font-medium">
+                {studentUser?.name?.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2) ?? '??'}
               </div>
-              <Badge variant="outline" className="font-mono text-[11px]">
-                {activeStudent.email}
-              </Badge>
+              <div>
+                <div className="text-[15px] font-semibold text-[#EDEDEF]">{studentUser?.name ?? '—'}</div>
+                <div className="text-[11px] text-[#6E6E78] font-mono">{studentUser?.email ?? '—'}</div>
+              </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-[13px]">
+            {active?.location && (
+              <div className="flex items-center gap-1.5 mb-4 p-2.5 rounded-lg bg-[#18181B] border border-[#26262A]">
+                <MapPin className="w-3.5 h-3.5 text-[#6E56CF] shrink-0" />
+                <span className="text-[12px] text-[#A0A0AB]">{active.location}</span>
+              </div>
+            )}
+
+            {/* Editable profile fields */}
+            <div className="grid grid-cols-2 gap-3">
               <div className="flex flex-col gap-1">
-                <label className="text-[11px] uppercase tracking-wider text-[#6E6E78]">
-                  CGPA (0 - 10)
-                </label>
+                <label className="text-[10px] uppercase tracking-wider text-[#6E6E78]">CGPA</label>
                 <Input
-                  value={activeStudent.cgpa}
-                  onChange={(e) => handleUpdateStudent('cgpa', e.target.value)}
-                  className="font-mono font-semibold text-[14px] bg-[#18181B] border-[#26262A]"
+                  value={editCgpa}
+                  onChange={(e) => setEditCgpa(e.target.value)}
+                  placeholder="e.g. 8.75"
+                  className="h-8 text-[12px] font-mono bg-[#18181B] border-[#26262A]"
                 />
               </div>
-
               <div className="flex flex-col gap-1">
-                <label className="text-[11px] uppercase tracking-wider text-[#6E6E78]">
-                  Active Backlogs
-                </label>
+                <label className="text-[10px] uppercase tracking-wider text-[#6E6E78]">Backlogs</label>
                 <Input
                   type="number"
-                  value={activeStudent.backlogs}
-                  onChange={(e) => handleUpdateStudent('backlogs', Number(e.target.value))}
-                  className="font-mono text-[14px] bg-[#18181B] border-[#26262A]"
+                  value={editBacklogs}
+                  onChange={(e) => setEditBacklogs(e.target.value)}
+                  placeholder="0"
+                  className="h-8 text-[12px] font-mono bg-[#18181B] border-[#26262A]"
+                  min={0}
                 />
               </div>
-
               <div className="flex flex-col gap-1">
-                <label className="text-[11px] uppercase tracking-wider text-[#6E6E78]">
-                  Placement Readiness
-                </label>
+                <label className="text-[10px] uppercase tracking-wider text-[#6E6E78]">Target Role</label>
+                <Input
+                  value={editTargetRole}
+                  onChange={(e) => setEditTargetRole(e.target.value)}
+                  placeholder="e.g. Full Stack SDE"
+                  className="h-8 text-[12px] bg-[#18181B] border-[#26262A]"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] uppercase tracking-wider text-[#6E6E78]">Placement Status</label>
                 <select
-                  value={activeStudent.placementStatus}
-                  onChange={(e) => handleUpdateStudent('placementStatus', e.target.value)}
-                  aria-label="Placement status selector"
-                  className="h-9 rounded-[10px] bg-[#18181B] border border-[#26262A] px-2.5 text-[12px] text-[#EDEDEF] focus:border-[#6E56CF] focus:outline-none"
+                  value={editStatus}
+                  onChange={(e) => setEditStatus(e.target.value)}
+                  className="h-8 text-[12px] bg-[#18181B] border border-[#26262A] rounded-md px-2 text-[#EDEDEF] focus:border-[#6E56CF] focus:outline-none"
                 >
-                  <option value="NOT_STARTED">Not Started</option>
-                  <option value="PREPARATION">Preparation</option>
-                  <option value="APPLIED">Applied</option>
-                  <option value="INTERVIEW">Interviewing</option>
-                  <option value="SHORTLISTED">Shortlisted</option>
-                  <option value="OFFERED">Offered</option>
-                  <option value="PLACED">Placed</option>
+                  {PLACEMENT_STATUS_OPTIONS.map((s) => (
+                    <option key={s} value={s}>{s.replace('_', ' ')}</option>
+                  ))}
                 </select>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[13px]">
-              <div className="flex flex-col gap-1">
-                <label className="text-[11px] uppercase tracking-wider text-[#6E6E78]">
-                  Target Role / Track
-                </label>
-                <Input
-                  value={activeStudent.targetRole}
-                  onChange={(e) => handleUpdateStudent('targetRole', e.target.value)}
-                  placeholder="e.g. Backend SDE, Cloud Engineer"
-                  className="bg-[#18181B] border-[#26262A]"
-                />
+            {active?.studentQuestion && (
+              <div className="mt-4 p-3 rounded-lg bg-[#18181B] border border-[#26262A]">
+                <div className="text-[10px] uppercase tracking-wider text-[#6E6E78] mb-1">Student&apos;s Pre-session Question</div>
+                <div className="text-[12px] text-[#A0A0AB] italic">&ldquo;{active.studentQuestion}&rdquo;</div>
               </div>
-
-              <div className="flex flex-col gap-1">
-                <label className="text-[11px] uppercase tracking-wider text-[#6E6E78]">
-                  Master Resume URL
-                </label>
-                <Input
-                  value={activeStudent.resumeUrl}
-                  onChange={(e) => handleUpdateStudent('resumeUrl', e.target.value)}
-                  className="bg-[#18181B] border-[#26262A] font-mono text-[12px]"
-                />
-              </div>
-            </div>
+            )}
           </Card>
 
-          {/* Card: Verified Skills Management */}
-          <Card className="p-5 bg-[#121214] border-[#26262A] flex flex-col gap-3">
-            <div className="flex items-center justify-between border-b border-[#26262A] pb-3">
-              <div>
-                <h2 className="text-[15px] font-semibold text-[#EDEDEF]">
-                  Verified Technical Skills
-                </h2>
-                <p className="text-[11px] text-[#6E6E78]">
-                  Endorsed and validated during technical mock discussions.
-                </p>
-              </div>
-              <span className="text-[11px] font-mono text-[#A0A0AB]">
-                {activeStudent.skills.length} skills logged
-              </span>
-            </div>
+          {/* Verified Technical Skills */}
+          <Card className="bg-[#121214] border-[#26262A] p-5">
+            <h3 className="text-[13px] font-semibold text-[#EDEDEF] mb-3 flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-[#6E56CF]" />
+              Verified Technical Skills
+            </h3>
 
-            {/* Skills Badges list */}
-            <div className="flex flex-wrap gap-2 py-1">
-              {activeStudent.skills.map((skill, sIdx) => (
+            {/* Existing skills */}
+            <div className="flex flex-wrap gap-2 mb-3 min-h-[32px]">
+              {student?.skills?.length === 0 && (
+                <span className="text-[12px] text-[#6E6E78]">No skills logged yet.</span>
+              )}
+              {student?.skills?.map((skill: any) => (
                 <div
-                  key={skill.name}
-                  className="flex items-center gap-2 pl-3 pr-2 py-1 rounded-full bg-[#18181B] border border-[#26262A] text-[12px] font-mono text-[#EDEDEF]"
+                  key={skill.id}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-medium ${PROFICIENCY_COLORS[skill.proficiency] ?? ''}`}
                 >
                   <span>{skill.name}</span>
-                  <span className="text-[10px] text-[#6E6E78] uppercase font-sans">
-                    {skill.proficiency}
-                  </span>
-                  <button
-                    onClick={() => handleRemoveSkill(sIdx)}
-                    className="w-4 h-4 rounded-full text-[#6E6E78] hover:text-[#E5484D] hover:bg-[#E5484D]/10 flex items-center justify-center transition-colors"
-                  >
+                  <span className="opacity-60">· {skill.proficiency.charAt(0) + skill.proficiency.slice(1).toLowerCase()}</span>
+                  <button onClick={() => handleRemoveSkill(skill.id)} className="ml-1 hover:opacity-100 opacity-50 transition-opacity">
                     ×
                   </button>
                 </div>
               ))}
             </div>
 
-            {/* Add Skill Input */}
-            <div className="flex items-center gap-2 pt-2">
+            {/* Add skill */}
+            <div className="flex flex-col gap-2 pt-3 border-t border-[#26262A]">
+              <div className="flex gap-2">
+                <Input
+                  value={newSkillName}
+                  onChange={(e) => setNewSkillName(e.target.value)}
+                  placeholder="Skill name (e.g. React)"
+                  className="flex-1 h-8 text-[12px] bg-[#18181B] border-[#26262A]"
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddSkill()}
+                />
+                <select
+                  value={newSkillProficiency}
+                  onChange={(e) => setNewSkillProficiency(e.target.value as any)}
+                  className="h-8 text-[11px] bg-[#18181B] border border-[#26262A] rounded-md px-2 text-[#EDEDEF] focus:border-[#6E56CF] focus:outline-none"
+                >
+                  <option value="BEGINNER">Beginner</option>
+                  <option value="INTERMEDIATE">Intermediate</option>
+                  <option value="ADVANCED">Advanced</option>
+                </select>
+              </div>
+              <div className="flex gap-2">
+                <select
+                  value={newSkillCategory}
+                  onChange={(e) => setNewSkillCategory(e.target.value)}
+                  className="flex-1 h-8 text-[11px] bg-[#18181B] border border-[#26262A] rounded-md px-2 text-[#EDEDEF] focus:border-[#6E56CF] focus:outline-none"
+                >
+                  {SKILL_CATEGORIES.map((c) => (
+                    <option key={c.value} value={c.value}>{c.label}</option>
+                  ))}
+                </select>
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="h-8 gap-1 text-[12px] shrink-0"
+                  onClick={handleAddSkill}
+                  disabled={isPending || !newSkillName.trim()}
+                >
+                  <Plus className="w-3.5 h-3.5" />Add
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* RIGHT: Mock Interview Questions + SPC Notes */}
+        <div className="flex flex-col gap-5">
+
+          {/* Mock Interview Questions */}
+          <Card className="bg-[#121214] border-[#26262A] p-5">
+            <h3 className="text-[13px] font-semibold text-[#EDEDEF] mb-3 flex items-center gap-2">
+              <MessageSquare className="w-4 h-4 text-[#6E56CF]" />
+              Technical Mock Interview Questions
+            </h3>
+
+            <div className="flex flex-col gap-2 mb-3 min-h-[48px]">
+              {active?.questionsAsked?.length === 0 && (
+                <span className="text-[12px] text-[#6E6E78]">No questions recorded yet.</span>
+              )}
+              {active?.questionsAsked?.map((q: any, idx: number) => (
+                <div key={q.id} className="flex items-start gap-2 group">
+                  <span className="text-[11px] font-mono text-[#6E56CF] mt-0.5 shrink-0">Q{idx + 1}.</span>
+                  <span className="text-[12px] text-[#EDEDEF] flex-1 leading-relaxed">{q.question}</span>
+                  <button
+                    onClick={() => handleRemoveQuestion(q.id)}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity text-[#E5484D] hover:text-[#E5484D] shrink-0"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex gap-2 pt-3 border-t border-[#26262A]">
               <Input
-                value={newSkillName}
-                onChange={(e) => setNewSkillName(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleAddSkill()}
-                placeholder="Add verified skill (e.g. System Design, Redis, Golang)..."
-                className="h-8 text-[12px] bg-[#18181B] border-[#26262A]"
+                value={newQuestion}
+                onChange={(e) => setNewQuestion(e.target.value)}
+                placeholder="How do you center a div?"
+                className="flex-1 h-8 text-[12px] bg-[#18181B] border-[#26262A]"
+                onKeyDown={(e) => e.key === 'Enter' && handleAddQuestion()}
               />
               <Button
-                variant="secondary"
+                variant="default"
                 size="sm"
-                onClick={handleAddSkill}
-                className="h-8 text-[12px] shrink-0 gap-1 border-[#26262A]"
+                className="h-8 gap-1 text-[12px] shrink-0"
+                onClick={handleAddQuestion}
+                disabled={isPending || !newQuestion.trim()}
               >
-                <Plus className="w-3.5 h-3.5" />
-                Add
+                <Plus className="w-3.5 h-3.5" />Add
+              </Button>
+            </div>
+          </Card>
+
+          {/* SPC Notes */}
+          <Card className="bg-[#121214] border-[#26262A] p-5">
+            <h3 className="text-[13px] font-semibold text-[#EDEDEF] mb-3 flex items-center gap-2">
+              <FileText className="w-4 h-4 text-[#6E56CF]" />
+              SPC Notes
+            </h3>
+
+            {/* Past notes */}
+            <div className="flex flex-col gap-2 mb-4 max-h-[200px] overflow-y-auto">
+              {student?.notes?.length === 0 && (
+                <span className="text-[12px] text-[#6E6E78]">No notes yet.</span>
+              )}
+              {student?.notes?.map((note: any) => (
+                <div key={note.id} className="p-3 rounded-lg bg-[#18181B] border border-[#26262A]">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] text-[#6E6E78] font-mono">
+                      {new Date(note.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })} · {note.author?.name ?? 'SPC'}
+                    </span>
+                  </div>
+                  <p className="text-[12px] text-[#A0A0AB] leading-relaxed">{note.content}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* New note */}
+            <div className="flex flex-col gap-2 pt-3 border-t border-[#26262A]">
+              <textarea
+                rows={3}
+                value={noteText}
+                onChange={(e) => setNoteText(e.target.value)}
+                placeholder="Add a note about this student's session..."
+                className="w-full rounded-[10px] bg-[#18181B] border border-[#26262A] p-3 text-[12px] text-[#EDEDEF] placeholder-[#6E6E78] focus:border-[#6E56CF] focus:outline-none resize-none"
+              />
+              <Button
+                variant="default"
+                size="sm"
+                className="h-8 gap-1 text-[12px] self-end"
+                onClick={handleSaveNote}
+                disabled={isPending || !noteText.trim()}
+              >
+                <Save className="w-3.5 h-3.5" />Save Note
               </Button>
             </div>
           </Card>
         </div>
-
-        {/* Right Column (5 cols): SPC Notes & Questions Log */}
-        <div className="lg:col-span-5 flex flex-col gap-5">
-          {/* Card: Live SPC Notes */}
-          <Card className="p-5 bg-[#121214] border-[#26262A] flex flex-col gap-3">
-            <div className="flex items-center justify-between border-b border-[#26262A] pb-3">
-              <div className="flex items-center gap-2">
-                <MessageSquare className="w-4 h-4 text-[#6E56CF]" />
-                <h2 className="text-[15px] font-semibold text-[#EDEDEF]">
-                  SPC Feedback & Notes
-                </h2>
-              </div>
-              <span className="text-[10px] font-mono text-[#6E6E78] uppercase">
-                Internal Only
-              </span>
-            </div>
-
-            <textarea
-              rows={4}
-              value={activeStudent.currentNote}
-              onChange={(e) => handleUpdateStudent('currentNote', e.target.value)}
-              placeholder="Record mentoring notes, candidate strengths, weaknesses, interview readiness, and action items..."
-              className="w-full rounded-[10px] bg-[#18181B] border border-[#26262A] p-3 text-[13px] text-[#EDEDEF] placeholder-[#6E6E78] focus:border-[#6E56CF] focus:outline-none leading-relaxed"
-            />
-
-            {/* Questions Asked Log during this Session */}
-            <div className="flex flex-col gap-2 pt-2">
-              <span className="text-[11px] uppercase tracking-wider text-[#6E6E78] font-medium font-mono">
-                Technical Questions Tested
-              </span>
-              <div className="flex flex-col gap-1.5">
-                {activeStudent.questionsAsked.map((q, qIdx) => (
-                  <div
-                    key={qIdx}
-                    className="p-2 rounded-lg bg-[#18181B] border border-[#26262A] text-[12px] text-[#A0A0AB] leading-snug flex items-start gap-2"
-                  >
-                    <span className="font-mono text-[#6E56CF] font-bold text-[11px] shrink-0">
-                      Q{qIdx + 1}.
-                    </span>
-                    <span>{q}</span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex items-center gap-2 pt-1">
-                <Input
-                  value={newQuestion}
-                  onChange={(e) => setNewQuestion(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleAddQuestion()}
-                  placeholder="Log technical question asked..."
-                  className="h-8 text-[12px] bg-[#18181B] border-[#26262A]"
-                />
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={handleAddQuestion}
-                  className="h-8 text-[12px] shrink-0 border-[#26262A]"
-                >
-                  Log
-                </Button>
-              </div>
-            </div>
-
-            {/* Past Notes History */}
-            {activeStudent.pastNotes.length > 0 && (
-              <div className="border-t border-[#26262A] pt-3 flex flex-col gap-2">
-                <span className="text-[10px] uppercase tracking-wider text-[#6E6E78] font-medium">
-                  Past Session History
-                </span>
-                {activeStudent.pastNotes.map((pn, pIdx) => (
-                  <div
-                    key={pIdx}
-                    className="p-2.5 rounded-lg bg-[#18181B]/50 border border-[#26262A] text-[11px] text-[#A0A0AB]"
-                  >
-                    <div className="flex items-center justify-between text-[#6E6E78] mb-1 font-mono">
-                      <span>{pn.author}</span>
-                      <span>{pn.date}</span>
-                    </div>
-                    <div>{pn.note}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
-        </div>
       </div>
-
-      {/* Floating Session Timer (Bottom Right) */}
-      <SessionTimer
-        initialMinutes={15}
-        studentName={activeStudent.name}
-        slotLabel="Live 15-min Slot"
-      />
     </div>
   )
 }

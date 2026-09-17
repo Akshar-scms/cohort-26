@@ -1,18 +1,14 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect, useTransition } from 'react'
 import {
   Search,
-  Filter,
-  Eye,
-  Edit,
-  FileText,
   ExternalLink,
   ChevronDown,
-  Check,
+  Loader2,
+  MapPin,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import {
@@ -22,268 +18,269 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog'
+import { getAllStudents } from '@/app/actions/student-actions'
 
-export function StudentsDirectoryView() {
-  const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState('ALL')
+interface StudentsDirectoryViewProps {
+  spcId: string
+}
+
+const STATUS_MAP: Record<string, { label: string; variant: string; dot: string }> = {
+  NOT_STARTED:  { label: 'Not Started',  variant: 'secondary', dot: '#6E6E78' },
+  PREPARATION:  { label: 'Preparation',  variant: 'secondary', dot: '#A0A0AB' },
+  APPLIED:      { label: 'Applied',      variant: 'info',      dot: '#0091FF' },
+  INTERVIEW:    { label: 'Interviewing', variant: 'warning',   dot: '#FFB224' },
+  SHORTLISTED:  { label: 'Shortlisted',  variant: 'success',   dot: '#30A46C' },
+  OFFERED:      { label: 'Offered',      variant: 'success',   dot: '#30A46C' },
+  PLACED:       { label: 'Placed',       variant: 'success',   dot: '#30A46C' },
+}
+
+export function StudentsDirectoryView({ spcId }: StudentsDirectoryViewProps) {
+  const [students, setStudents]             = useState<any[]>([])
+  const [loading, setLoading]               = useState(true)
+  const [searchQuery, setSearchQuery]       = useState('')
+  const [statusFilter, setStatusFilter]     = useState('ALL')
   const [selectedStudent, setSelectedStudent] = useState<any | null>(null)
 
-  const sampleStudents = [
-    {
-      id: '1',
-      rollNo: '24MCA001',
-      name: 'Aarav Shah',
-      email: '24mca001@nirmauni.ac.in',
-      cgpa: '8.85',
-      backlogs: 0,
-      skills: ['TypeScript', 'Next.js', 'PostgreSQL', 'Docker'],
-      status: 'INTERVIEW',
-      statusLabel: 'Interviewing',
-      statusVariant: 'warning' as const,
-      dotColor: '#FFB224',
-      targetRole: 'Full Stack SDE',
-      spcNotes: 'Strong frontend fundamentals, mock interview scheduled for 18 Sept.',
-    },
-    {
-      id: '2',
-      rollNo: '24MCA014',
-      name: 'Priya Joshi',
-      email: '24mca014@nirmauni.ac.in',
-      cgpa: '9.20',
-      backlogs: 0,
-      skills: ['Java', 'Spring Boot', 'AWS', 'Kafka'],
-      status: 'SHORTLISTED',
-      statusLabel: 'Shortlisted',
-      statusVariant: 'success' as const,
-      dotColor: '#30A46C',
-      targetRole: 'Backend Engineer',
-      spcNotes: 'Shortlisted for Amazon interview loop. Recommended distributed systems prep.',
-    },
-    {
-      id: '3',
-      rollNo: '24MCA028',
-      name: 'Dev Patel',
-      email: '24mca028@nirmauni.ac.in',
-      cgpa: '8.40',
-      backlogs: 0,
-      skills: ['Python', 'Django', 'FastAPI', 'Redis'],
-      status: 'PREPARATION',
-      statusLabel: 'Preparation',
-      statusVariant: 'secondary' as const,
-      dotColor: '#A0A0AB',
-      targetRole: 'Backend Developer',
-      spcNotes: 'Needs resume refinement for DSA projects.',
-    },
-    {
-      id: '4',
-      rollNo: '24MCA035',
-      name: 'Kunal Verma',
-      email: '24mca035@nirmauni.ac.in',
-      cgpa: '7.95',
-      backlogs: 0,
-      skills: ['React', 'Node.js', 'MongoDB', 'GraphQL'],
-      status: 'APPLIED',
-      statusLabel: 'Applied',
-      statusVariant: 'info' as const,
-      dotColor: '#0091FF',
-      targetRole: 'Frontend Developer',
-      spcNotes: 'Active applications at 3 product startups.',
-    },
-  ]
+  useEffect(() => {
+    getAllStudents().then((data) => {
+      setStudents(data)
+      setLoading(false)
+    })
+  }, [])
 
-  const filteredStudents = sampleStudents.filter((student) => {
-    const matchesSearch =
-      student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      student.rollNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      student.skills.some((s) => s.toLowerCase().includes(searchQuery.toLowerCase()))
-
-    const matchesStatus =
-      statusFilter === 'ALL' || student.status === statusFilter
-
+  const filtered = students.filter((s) => {
+    const name  = s.user?.name?.toLowerCase() ?? ''
+    const email = s.user?.email?.toLowerCase() ?? ''
+    const roll  = s.rollNumber?.toLowerCase() ?? ''
+    const q = searchQuery.toLowerCase()
+    const matchesSearch = !q || name.includes(q) || email.includes(q) || roll.includes(q)
+    const matchesStatus = statusFilter === 'ALL' || s.placementStatus === statusFilter
     return matchesSearch && matchesStatus
   })
 
+  const statusOptions = ['ALL', 'NOT_STARTED', 'PREPARATION', 'APPLIED', 'INTERVIEW', 'SHORTLISTED', 'OFFERED', 'PLACED']
+
   return (
-    <div className="w-full max-w-[1200px] mx-auto p-8 flex flex-col gap-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-[22px] font-semibold text-[#EDEDEF] tracking-tight">
-            Student Directory
-          </h1>
-          <p className="text-[13px] text-[#A0A0AB]">
-            MCA &apos;26 Batch profiles, academic records, and placement pipeline status.
-          </p>
+    <div className="w-full max-w-[1200px] mx-auto p-8 flex flex-col">
+      {/* Header */}
+      <div className="flex flex-col gap-1 mb-6">
+        <h1 className="text-[22px] font-semibold text-[#EDEDEF] tracking-tight">
+          Students Directory
+        </h1>
+        <p className="text-[13px] text-[#A0A0AB]">
+          MCA &apos;26 batch · {students.length} students enrolled
+        </p>
+      </div>
+
+      {/* Search + Filter Row */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-5">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6E6E78]" />
+          <Input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search by name, email, or roll number..."
+            className="pl-9 bg-[#121214] border-[#26262A] text-[13px]"
+          />
         </div>
 
-        {/* Search & Filter */}
-        <div className="flex items-center gap-3">
-          <div className="relative w-[220px]">
-            <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-[#6E6E78]" />
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Filter by name, roll, skill..."
-              className="pl-8 text-[12px] h-8 bg-[#18181B] border-[#26262A]"
-            />
-          </div>
-
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            aria-label="Filter students by status"
-            className="h-8 rounded-[10px] bg-[#18181B] border border-[#26262A] px-2.5 text-[12px] text-[#EDEDEF] focus:outline-none focus:border-[#6E56CF]"
-          >
-            <option value="ALL">All Statuses</option>
-            <option value="SHORTLISTED">Shortlisted</option>
-            <option value="INTERVIEW">Interviewing</option>
-            <option value="APPLIED">Applied</option>
-            <option value="PREPARATION">Preparation</option>
-          </select>
+        <div className="flex gap-2 flex-wrap">
+          {statusOptions.map((s) => (
+            <button
+              key={s}
+              onClick={() => setStatusFilter(s)}
+              className={`h-8 px-3 rounded-full border text-[11px] font-medium transition-colors ${
+                statusFilter === s
+                  ? 'border-[#6E56CF] bg-[#6E56CF]/15 text-[#cbbeff]'
+                  : 'border-[#26262A] bg-[#121214] text-[#A0A0AB] hover:border-[#34343A] hover:text-[#EDEDEF]'
+              }`}
+            >
+              {s === 'ALL' ? 'All' : STATUS_MAP[s]?.label ?? s}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Students Data Table Card */}
-      <Card className="bg-[#121214] border-[#26262A] overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-[13px] border-collapse">
-            <thead>
-              <tr className="border-b border-[#26262A] text-[#6E6E78] text-[11px] uppercase tracking-wider font-medium">
-                <th className="py-3 px-5">Student</th>
-                <th className="py-3 px-4 font-mono">Roll No</th>
-                <th className="py-3 px-4 font-mono">CGPA</th>
-                <th className="py-3 px-4">Target Role</th>
-                <th className="py-3 px-4">Status</th>
-                <th className="py-3 px-5 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#26262A]">
-              {filteredStudents.map((student) => (
-                <tr
-                  key={student.id}
-                  className="hover:bg-[#18181B] transition-colors"
-                >
-                  <td className="py-3.5 px-5">
-                    <div className="flex items-center gap-3">
-                      <div className="w-7 h-7 rounded-full bg-[#18181B] border border-[#26262A] flex items-center justify-center font-mono text-[11px] font-medium text-[#EDEDEF]">
-                        {student.name
-                          .split(' ')
-                          .map((n) => n[0])
-                          .join('')}
+      {/* Count */}
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-[12px] text-[#6E6E78] font-mono">{filtered.length} result{filtered.length !== 1 ? 's' : ''}</span>
+      </div>
+
+      {/* Table */}
+      {loading ? (
+        <div className="flex items-center justify-center py-16 text-[#6E6E78]">
+          <Loader2 className="w-5 h-5 animate-spin mr-2" />
+          <span className="text-[13px]">Loading students...</span>
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 text-center gap-2 bg-[#121214] border border-[#26262A] rounded-xl">
+          <div className="text-[14px] font-medium text-[#EDEDEF]">No students found</div>
+          <p className="text-[12px] text-[#A0A0AB]">
+            {students.length === 0
+              ? 'No students have signed up yet. They must sign in using their Nirma email.'
+              : 'Try adjusting your search or filter.'}
+          </p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {/* Header row */}
+          <div className="grid grid-cols-[1fr_160px_100px_120px_100px] gap-4 px-4 py-2 text-[11px] uppercase tracking-wider text-[#6E6E78]">
+            <span>Student</span>
+            <span>Target Role</span>
+            <span>CGPA</span>
+            <span>Status</span>
+            <span className="text-right">Actions</span>
+          </div>
+
+          {filtered.map((student) => {
+            const status = STATUS_MAP[student.placementStatus] ?? STATUS_MAP.NOT_STARTED
+            const topSkills = student.skills?.slice(0, 4) ?? []
+            const latestNote = student.notes?.[0]?.content ?? null
+
+            return (
+              <div
+                key={student.id}
+                className="grid grid-cols-[1fr_160px_100px_120px_100px] gap-4 items-center bg-[#121214] border border-[#26262A] rounded-xl px-4 py-3 hover:border-[#34343A] transition-colors"
+              >
+                {/* Student info */}
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-8 h-8 rounded-full bg-[#18181B] border border-[#26262A] flex items-center justify-center font-mono text-[11px] text-[#EDEDEF] font-medium shrink-0">
+                    {student.user?.name?.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2) ?? '??'}
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[13px] font-medium text-[#EDEDEF] truncate">{student.user?.name ?? '—'}</span>
+                    <span className="text-[11px] text-[#6E6E78] font-mono truncate">{student.user?.email ?? '—'}</span>
+                  </div>
+                </div>
+
+                {/* Target role */}
+                <span className="text-[12px] text-[#A0A0AB] truncate">
+                  {student.targetRole ?? <span className="text-[#34343A]">—</span>}
+                </span>
+
+                {/* CGPA */}
+                <span className="text-[13px] font-mono text-[#EDEDEF]">
+                  {student.cgpa ?? <span className="text-[#34343A]">—</span>}
+                </span>
+
+                {/* Status badge */}
+                <div>
+                  <Badge variant={status.variant as any} dotColor={status.dot}>
+                    {status.label}
+                  </Badge>
+                </div>
+
+                {/* View button */}
+                <div className="flex justify-end">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="h-7 text-[11px] border-[#26262A]"
+                    onClick={() => setSelectedStudent(student)}
+                  >
+                    View
+                  </Button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Student Detail Modal */}
+      <Dialog open={!!selectedStudent} onOpenChange={(o) => !o && setSelectedStudent(null)}>
+        <DialogContent className="max-w-xl bg-[#1F1F23] border-[#26262A] max-h-[90vh] overflow-y-auto">
+          {selectedStudent && (() => {
+            const s = selectedStudent
+            const status = STATUS_MAP[s.placementStatus] ?? STATUS_MAP.NOT_STARTED
+            const skills = s.skills ?? []
+            const latestNote = s.notes?.[0]
+
+            return (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="text-[17px] text-[#EDEDEF]">
+                    {s.user?.name ?? '—'}
+                  </DialogTitle>
+                  <DialogDescription className="text-[12px] text-[#6E6E78] font-mono">
+                    {s.user?.email ?? '—'} · {s.rollNumber ?? 'Roll N/A'} · Batch {s.batch ?? 'MCA26'}
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="flex flex-col gap-4 pt-2">
+                  {/* Status + Target */}
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <Badge variant={status.variant as any} dotColor={status.dot}>{status.label}</Badge>
+                    {s.targetRole && (
+                      <span className="text-[12px] text-[#A0A0AB]">→ {s.targetRole}</span>
+                    )}
+                  </div>
+
+                  {/* Academics */}
+                  <div className="grid grid-cols-3 gap-3">
+                    {[
+                      { label: 'CGPA', value: s.cgpa },
+                      { label: 'Backlogs', value: s.backlogs },
+                      { label: 'Section', value: s.section },
+                    ].map(({ label, value }) => (
+                      <div key={label} className="p-3 rounded-lg bg-[#121214] border border-[#26262A] flex flex-col gap-1">
+                        <span className="text-[10px] uppercase tracking-wider text-[#6E6E78]">{label}</span>
+                        <span className="text-[16px] font-mono font-semibold text-[#EDEDEF]">
+                          {value ?? <span className="text-[#34343A] text-[13px]">—</span>}
+                        </span>
                       </div>
-                      <div className="flex flex-col">
-                        <span className="font-medium text-[#EDEDEF]">
-                          {student.name}
-                        </span>
-                        <span className="text-[11px] text-[#6E6E78] font-mono">
-                          {student.email}
-                        </span>
+                    ))}
+                  </div>
+
+                  {/* Skills */}
+                  {skills.length > 0 && (
+                    <div>
+                      <div className="text-[11px] uppercase tracking-wider text-[#6E6E78] mb-2">Verified Skills</div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {skills.map((sk: any) => (
+                          <span key={sk.id} className="px-2.5 py-1 rounded-full bg-[#18181B] border border-[#26262A] text-[11px] text-[#EDEDEF]">
+                            {sk.name} · <span className="text-[#6E6E78]">{sk.proficiency.charAt(0) + sk.proficiency.slice(1).toLowerCase()}</span>
+                          </span>
+                        ))}
                       </div>
                     </div>
-                  </td>
+                  )}
 
-                  <td className="py-3.5 px-4 font-mono text-[12px] text-[#A0A0AB]">
-                    {student.rollNo}
-                  </td>
+                  {/* Links */}
+                  {(s.githubUrl || s.linkedinUrl || s.resumeUrl) && (
+                    <div className="flex flex-wrap gap-2">
+                      {s.githubUrl && (
+                        <a href={s.githubUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[12px] text-[#6E56CF] hover:underline">
+                          GitHub <ExternalLink className="w-3 h-3" />
+                        </a>
+                      )}
+                      {s.linkedinUrl && (
+                        <a href={s.linkedinUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[12px] text-[#6E56CF] hover:underline">
+                          LinkedIn <ExternalLink className="w-3 h-3" />
+                        </a>
+                      )}
+                      {s.resumeUrl && (
+                        <a href={s.resumeUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[12px] text-[#6E56CF] hover:underline">
+                          Resume <ExternalLink className="w-3 h-3" />
+                        </a>
+                      )}
+                    </div>
+                  )}
 
-                  <td className="py-3.5 px-4 font-mono text-[13px] font-semibold text-[#EDEDEF] tabular-nums">
-                    {student.cgpa}
-                  </td>
-
-                  <td className="py-3.5 px-4 text-[#A0A0AB]">
-                    {student.targetRole}
-                  </td>
-
-                  <td className="py-3.5 px-4">
-                    <Badge
-                      variant={student.statusVariant}
-                      dotColor={student.dotColor}
-                    >
-                      {student.statusLabel}
-                    </Badge>
-                  </td>
-
-                  <td className="py-3.5 px-5 text-right">
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      className="h-7 text-[12px] border-[#26262A] hover:border-[#34343A]"
-                      onClick={() => setSelectedStudent(student)}
-                    >
-                      View Profile
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
-
-      {/* Student Profile Drawer / Modal */}
-      <Dialog
-        open={!!selectedStudent}
-        onOpenChange={(open) => !open && setSelectedStudent(null)}
-      >
-        <DialogContent className="max-w-lg bg-[#1F1F23] border-[#26262A]">
-          <DialogHeader>
-            <DialogTitle className="text-[18px] text-[#EDEDEF] flex items-center justify-between pr-6">
-              <span>{selectedStudent?.name}</span>
-              <Badge
-                variant={selectedStudent?.statusVariant}
-                dotColor={selectedStudent?.dotColor}
-              >
-                {selectedStudent?.statusLabel}
-              </Badge>
-            </DialogTitle>
-            <DialogDescription className="text-[12px] text-[#A0A0AB] font-mono">
-              {selectedStudent?.rollNo} · {selectedStudent?.email}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="flex flex-col gap-4 py-2 text-[13px]">
-            <div className="grid grid-cols-2 gap-3 p-3 rounded-lg bg-[#121214] border border-[#26262A]">
-              <div>
-                <div className="text-[11px] text-[#6E6E78] uppercase">CGPA</div>
-                <div className="text-[16px] font-mono font-semibold text-[#EDEDEF]">
-                  {selectedStudent?.cgpa} / 10.0
+                  {/* Latest SPC note */}
+                  {latestNote && (
+                    <div className="p-3 rounded-lg bg-[#121214] border border-[#26262A]">
+                      <div className="text-[10px] uppercase tracking-wider text-[#6E6E78] mb-1">Latest SPC Note</div>
+                      <p className="text-[12px] text-[#A0A0AB] leading-relaxed">{latestNote.content}</p>
+                      <div className="text-[10px] text-[#6E6E78] mt-1 font-mono">
+                        {new Date(latestNote.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-              <div>
-                <div className="text-[11px] text-[#6E6E78] uppercase">
-                  Active Backlogs
-                </div>
-                <div className="text-[16px] font-mono font-semibold text-[#EDEDEF]">
-                  {selectedStudent?.backlogs}
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <div className="text-[11px] uppercase tracking-wider text-[#6E6E78] mb-2 font-medium">
-                Verified Skills
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {selectedStudent?.skills.map((skill: string) => (
-                  <span
-                    key={skill}
-                    className="px-2.5 py-1 rounded-full bg-[#18181B] border border-[#26262A] text-[12px] font-mono text-[#EDEDEF]"
-                  >
-                    {skill}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <div className="text-[11px] uppercase tracking-wider text-[#6E6E78] mb-1.5 font-medium">
-                SPC Internal Notes
-              </div>
-              <div className="p-3 rounded-lg bg-[#18181B] border border-[#26262A] text-[#A0A0AB] text-[12px] leading-relaxed">
-                {selectedStudent?.spcNotes}
-              </div>
-            </div>
-          </div>
+              </>
+            )
+          })()}
         </DialogContent>
       </Dialog>
     </div>

@@ -46,12 +46,14 @@ export const skillCategoryEnum = pgEnum('skill_category', [
   'OTHER',
 ])
 
-/** Proficiency enum */
+/**
+ * Proficiency enum — BEGINNER / INTERMEDIATE / ADVANCED
+ * (EXPERT removed — SPC UI only exposes three levels)
+ */
 export const proficiencyEnum = pgEnum('proficiency', [
   'BEGINNER',
   'INTERMEDIATE',
   'ADVANCED',
-  'EXPERT',
 ])
 
 /** Booking status enum */
@@ -189,7 +191,7 @@ export const studentSkills = pgTable(
 )
 
 // ─────────────────────────────────────────────────────────────
-// Table: spc_notes (Internal to SPCs)
+// Table: spc_notes (Internal to SPCs — per student)
 // ─────────────────────────────────────────────────────────────
 export const spcNotes = pgTable(
   'spc_notes',
@@ -218,7 +220,9 @@ export const spcNotes = pgTable(
 )
 
 // ─────────────────────────────────────────────────────────────
-// Table: mentoring_slots (15-min windows, max 4 students)
+// Table: mentoring_slots
+// 15-min offline windows, 1 student per slot
+// meetingLink removed — replaced with location (offline venue)
 // ─────────────────────────────────────────────────────────────
 export const mentoringSlots = pgTable(
   'mentoring_slots',
@@ -232,10 +236,11 @@ export const mentoringSlots = pgTable(
     slotDate: date('slot_date').notNull(),
     startTime: time('start_time', { withTimezone: false }).notNull(),
     durationMinutes: smallint('duration_minutes').notNull().default(15),
-    maxCapacity: smallint('max_capacity').notNull().default(4),
+    maxCapacity: smallint('max_capacity').notNull().default(1),
     currentBookings: smallint('current_bookings').notNull().default(0),
     isActive: boolean('is_active').notNull().default(true),
-    meetingLink: text('meeting_link'),
+    /** Offline location — e.g., "Lab 302, Block-A" or "SPC Room, Ground Floor" */
+    location: varchar('location', { length: 256 }),
     notes: text('notes'),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
@@ -290,6 +295,27 @@ export const slotBookings = pgTable(
 )
 
 // ─────────────────────────────────────────────────────────────
+// Table: session_questions
+// Mock interview questions asked per booking session
+// ─────────────────────────────────────────────────────────────
+export const sessionQuestions = pgTable(
+  'session_questions',
+  {
+    id: text('id')
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    bookingId: text('booking_id')
+      .notNull()
+      .references(() => slotBookings.id, { onDelete: 'cascade' }),
+    question: text('question').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index('session_questions_booking_idx').on(t.bookingId)]
+)
+
+// ─────────────────────────────────────────────────────────────
 // Relations
 // ─────────────────────────────────────────────────────────────
 
@@ -341,7 +367,7 @@ export const mentoringSlotsRelations = relations(
   })
 )
 
-export const slotBookingsRelations = relations(slotBookings, ({ one }) => ({
+export const slotBookingsRelations = relations(slotBookings, ({ one, many }) => ({
   slot: one(mentoringSlots, {
     fields: [slotBookings.slotId],
     references: [mentoringSlots.id],
@@ -349,6 +375,14 @@ export const slotBookingsRelations = relations(slotBookings, ({ one }) => ({
   student: one(students, {
     fields: [slotBookings.studentId],
     references: [students.id],
+  }),
+  questions: many(sessionQuestions),
+}))
+
+export const sessionQuestionsRelations = relations(sessionQuestions, ({ one }) => ({
+  booking: one(slotBookings, {
+    fields: [sessionQuestions.bookingId],
+    references: [slotBookings.id],
   }),
 }))
 
@@ -390,7 +424,7 @@ export type SelectSpcNote = z.infer<typeof selectSpcNoteSchema>
 export const insertMentoringSlotSchema = createInsertSchema(mentoringSlots, {
   slotDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   startTime: z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/),
-  meetingLink: z.string().url().optional().or(z.literal('')),
+  location: z.string().max(256).optional().or(z.literal('')),
 })
 export const selectMentoringSlotSchema = createSelectSchema(mentoringSlots)
 export type InsertMentoringSlot = z.infer<typeof insertMentoringSlotSchema>
@@ -402,3 +436,10 @@ export const insertSlotBookingSchema = createInsertSchema(slotBookings, {
 export const selectSlotBookingSchema = createSelectSchema(slotBookings)
 export type InsertSlotBooking = z.infer<typeof insertSlotBookingSchema>
 export type SelectSlotBooking = z.infer<typeof selectSlotBookingSchema>
+
+export const insertSessionQuestionSchema = createInsertSchema(sessionQuestions, {
+  question: z.string().min(1).max(1000),
+})
+export const selectSessionQuestionSchema = createSelectSchema(sessionQuestions)
+export type InsertSessionQuestion = z.infer<typeof insertSessionQuestionSchema>
+export type SelectSessionQuestion = z.infer<typeof selectSessionQuestionSchema>

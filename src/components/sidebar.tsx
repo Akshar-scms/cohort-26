@@ -17,6 +17,20 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
+interface NavItem {
+  id: string
+  label: string
+  icon: React.ComponentType<{ className?: string }>
+  href: string
+  spcOnly?: boolean
+  studentOnly?: boolean
+}
+
+interface NavGroup {
+  group: string
+  items: NavItem[]
+}
+
 interface SidebarProps {
   currentTab?: string
   onTabChange?: (tab: string) => void
@@ -33,7 +47,7 @@ export function Sidebar({ currentTab = 'dashboard', onTabChange, role = 'STUDENT
       ? `${user.firstName[0]}${user.lastName[0]}`
       : userName.slice(0, 2).toUpperCase()
 
-  const navItems = [
+  const navItems: NavGroup[] = [
     {
       group: 'OVERVIEW',
       items: [
