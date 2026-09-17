@@ -54,6 +54,18 @@ export function PlacementHubClient({
     }
   }
 
+  const handleRoleToggle = () => {
+    setActiveRole((r) => {
+      const nextRole = r === 'SPC' ? 'STUDENT' : 'SPC'
+      if (nextRole === 'STUDENT' && ['live-session', 'manage-slots', 'students'].includes(currentTab)) {
+        setCurrentTab('dashboard')
+      } else if (nextRole === 'SPC' && currentTab === 'book-slot') {
+        setCurrentTab('dashboard')
+      }
+      return nextRole
+    })
+  }
+
   return (
     <div className="min-h-screen bg-[#0A0A0B] text-[#EDEDEF] flex">
       <Sidebar
@@ -66,11 +78,7 @@ export function PlacementHubClient({
         <Topbar
           breadcrumbs={getBreadcrumbs()}
           role={activeRole}
-          onRoleToggle={
-            isRealSpc
-              ? () => setActiveRole((r) => (r === 'SPC' ? 'STUDENT' : 'SPC'))
-              : undefined
-          }
+          onRoleToggle={isRealSpc ? handleRoleToggle : undefined}
         />
 
         <main className="flex-1">
@@ -84,25 +92,25 @@ export function PlacementHubClient({
             />
           )}
 
-          {currentTab === 'book-slot' && (
+          {currentTab === 'book-slot' && activeRole === 'STUDENT' && (
             <BookMentoringSlotView
               userId={userId}
               studentId={(studentProfile as any)?.id ?? null}
             />
           )}
 
-          {currentTab === 'live-session' && (
+          {currentTab === 'live-session' && activeRole === 'SPC' && (
             <LiveMentoringSessionView
               spcId={userId}
               spcName={userName}
             />
           )}
 
-          {currentTab === 'manage-slots' && (
+          {currentTab === 'manage-slots' && activeRole === 'SPC' && (
             <SpcSlotsManagerView spcId={userId} />
           )}
 
-          {currentTab === 'students' && (
+          {currentTab === 'students' && activeRole === 'SPC' && (
             <StudentsDirectoryView spcId={userId} />
           )}
 

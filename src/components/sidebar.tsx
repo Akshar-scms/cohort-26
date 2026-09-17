@@ -64,9 +64,10 @@ export function Sidebar({ currentTab = 'dashboard', onTabChange, role = 'STUDENT
       items: [
         {
           id: 'students',
-          label: role === 'SPC' ? 'Students Directory' : 'My Profile',
+          label: 'Students Directory',
           icon: Users,
           href: '#',
+          spcOnly: true,
         },
         {
           id: 'companies',
