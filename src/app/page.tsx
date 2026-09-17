@@ -1,8 +1,8 @@
 'use client'
 
-import React, { useState } from 'react'
-import { useUser, useAuth } from '@clerk/nextjs'
-import { isEmailAllowed } from '@/lib/auth-checks'
+import React, { useState, useEffect } from 'react'
+import { useUser } from '@clerk/nextjs'
+import { isEmailAllowed, getUserRole, SPC_EMAILS } from '@/lib/auth-checks'
 import { Sidebar } from '@/components/sidebar'
 import { Topbar } from '@/components/topbar'
 import { LoginScreenView } from '@/components/views/login-screen-view'
@@ -11,6 +11,7 @@ import { StudentDashboardView } from '@/components/views/student-dashboard-view'
 import { SpcSlotsManagerView } from '@/components/views/spc-slots-manager-view'
 import { BookMentoringSlotView } from '@/components/views/book-mentoring-slot-view'
 import { StudentsDirectoryView } from '@/components/views/students-directory-view'
+import { LiveMentoringSessionView } from '@/components/views/live-mentoring-session-view'
 import { Card } from '@/components/ui/card'
 import { Building2, FileCheck2, Award, Video } from 'lucide-react'
 
@@ -18,6 +19,16 @@ export default function PlacementHubPage() {
   const { isSignedIn, isLoaded, user } = useUser()
   const [currentTab, setCurrentTab] = useState<string>('dashboard')
   const [activeRole, setActiveRole] = useState<'SPC' | 'STUDENT'>('STUDENT')
+
+  const primaryEmail = user?.primaryEmailAddress?.emailAddress
+  const detectedRole = getUserRole(primaryEmail)
+
+  // Sync role when user loads
+  useEffect(() => {
+    if (detectedRole) {
+      setActiveRole(detectedRole)
+    }
+  }, [detectedRole])
 
   // Loading state
   if (!isLoaded) {
@@ -34,13 +45,14 @@ export default function PlacementHubPage() {
   }
 
   // Email Domain Restriction Check
-  const primaryEmail = user.primaryEmailAddress?.emailAddress
   const isAuthorized = isEmailAllowed(primaryEmail)
 
   // If email domain is not authorized -> show Access Restricted view
   if (!isAuthorized) {
     return <AccessRestricted email={primaryEmail} />
   }
+
+  const isRealSpc = detectedRole === 'SPC'
 
   // Navigation breadcrumbs mapping
   const getBreadcrumbs = () => {
@@ -57,6 +69,8 @@ export default function PlacementHubPage() {
         return [{ label: 'Placement' }, { label: 'Offers' }]
       case 'book-slot':
         return [{ label: 'Mentoring' }, { label: 'Book a Slot' }]
+      case 'live-session':
+        return [{ label: 'Mentoring' }, { label: 'Live Mentoring Console' }]
       case 'manage-slots':
         return [{ label: 'Mentoring' }, { label: 'Manage Slots' }]
       case 'mock-interviews':
@@ -77,12 +91,14 @@ export default function PlacementHubPage() {
 
       {/* Main Canvas Area */}
       <div className="pl-[240px] flex-1 flex flex-col min-h-screen bg-[#0A0A0B]">
-        {/* Topbar */}
+        {/* Topbar with optional role switcher for SPCs to preview student view */}
         <Topbar
           breadcrumbs={getBreadcrumbs()}
           role={activeRole}
-          onRoleToggle={() =>
-            setActiveRole((r) => (r === 'SPC' ? 'STUDENT' : 'SPC'))
+          onRoleToggle={
+            isRealSpc
+              ? () => setActiveRole((r) => (r === 'SPC' ? 'STUDENT' : 'SPC'))
+              : undefined
           }
         />
 
@@ -95,6 +111,8 @@ export default function PlacementHubPage() {
           )}
 
           {currentTab === 'book-slot' && <BookMentoringSlotView />}
+
+          {currentTab === 'live-session' && <LiveMentoringSessionView />}
 
           {currentTab === 'manage-slots' && <SpcSlotsManagerView />}
 

@@ -82,6 +82,7 @@ export function Sidebar({ currentTab = 'dashboard', onTabChange, role = 'STUDENT
           label: 'Book a Slot',
           icon: CalendarCheck,
           href: '#',
+          studentOnly: true,
         },
         {
           id: 'manage-slots',
@@ -91,10 +92,11 @@ export function Sidebar({ currentTab = 'dashboard', onTabChange, role = 'STUDENT
           spcOnly: true,
         },
         {
-          id: 'mock-interviews',
-          label: 'Mock Interviews',
+          id: 'live-session',
+          label: 'Live Mentoring Console',
           icon: Video,
           href: '#',
+          spcOnly: true,
         },
       ],
     },
@@ -122,9 +124,11 @@ export function Sidebar({ currentTab = 'dashboard', onTabChange, role = 'STUDENT
         {/* Navigation Hierarchy */}
         <nav className="flex flex-col gap-4">
           {navItems.map((group) => {
-            const visibleItems = group.items.filter(
-              (item) => !item.spcOnly || role === 'SPC'
-            )
+            const visibleItems = group.items.filter((item) => {
+              if (item.spcOnly && role !== 'SPC') return false
+              if (item.studentOnly && role !== 'STUDENT') return false
+              return true
+            })
             if (visibleItems.length === 0) return null
 
             return (
