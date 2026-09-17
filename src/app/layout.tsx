@@ -19,7 +19,7 @@ const jetbrainsMono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "Placement Hub — MCA '26 | Nirma University",
+  title: "Placement Hub - MCA '26 | Nirma University",
   description: "Centralized Placement & Mentoring Hub for MCA '26 Batch, Nirma University",
 }
 
@@ -32,9 +32,13 @@ export default function RootLayout({
     <ClerkProvider>
       <html
         lang="en"
+        suppressHydrationWarning
         className={`dark ${geistSans.variable} ${geistMono.variable} ${jetbrainsMono.variable} h-full antialiased`}
       >
-        <body className="min-h-full bg-[#0A0A0B] text-[#EDEDEF] flex flex-col font-sans">
+        <body
+          suppressHydrationWarning
+          className="min-h-full bg-[#0A0A0B] text-[#EDEDEF] flex flex-col font-sans"
+        >
           {children}
         </body>
       </html>

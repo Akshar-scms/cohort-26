@@ -49,6 +49,48 @@ export async function getAvailableSlots(date: string, currentStudentId?: string)
 }
 
 /**
+ * Fetch month summary of slots for calendar dot indicators
+ */
+export async function getMonthSlotsSummary(year: number, month: number, currentStudentId?: string) {
+  const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`
+  const lastDay = new Date(year, month + 1, 0).getDate()
+  const endDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+
+  const allSlots = await db.query.mentoringSlots.findMany({
+    where: and(
+      sql`${mentoringSlots.slotDate} >= ${startDate}`,
+      sql`${mentoringSlots.slotDate} <= ${endDate}`,
+      eq(mentoringSlots.isActive, true)
+    ),
+    with: {
+      bookings: true,
+    },
+  })
+
+  // Map each date string to status: { hasAvailable: boolean, hasBooked: boolean, myBooked: boolean }
+  const summary: Record<string, { total: number; available: number; booked: number; myBooked: boolean }> = {}
+
+  for (const slot of allSlots) {
+    const d = slot.slotDate
+    if (!summary[d]) {
+      summary[d] = { total: 0, available: 0, booked: 0, myBooked: false }
+    }
+    summary[d].total += 1
+    const isFull = slot.currentBookings >= slot.maxCapacity
+    if (isFull) {
+      summary[d].booked += 1
+    } else {
+      summary[d].available += 1
+    }
+    if (currentStudentId && slot.bookings.some((b) => b.studentId === currentStudentId && b.status === 'CONFIRMED')) {
+      summary[d].myBooked = true
+    }
+  }
+
+  return summary
+}
+
+/**
  * Book a slot for a student.
  * Validates: slot must be active, not full, student must not already have a booking.
  */
@@ -75,19 +117,19 @@ export async function bookSlot(
   })
   if (existing) return { success: false, error: 'You have already booked this slot.' }
 
-  // Insert booking + increment counter atomically
-  await db.transaction(async (tx) => {
-    await tx.insert(slotBookings).values({
-      slotId,
-      studentId,
-      studentQuestion: studentQuestion?.trim() || null,
-      status: 'CONFIRMED',
-    })
-    await tx
-      .update(mentoringSlots)
-      .set({ currentBookings: sql`${mentoringSlots.currentBookings} + 1` })
-      .where(eq(mentoringSlots.id, slotId))
+  // Neon HTTP driver does not support interactive transactions.
+  // We perform sequential operations:
+  await db.insert(slotBookings).values({
+    slotId,
+    studentId,
+    studentQuestion: studentQuestion?.trim() || null,
+    status: 'CONFIRMED',
   })
+
+  await db
+    .update(mentoringSlots)
+    .set({ currentBookings: sql`${mentoringSlots.currentBookings} + 1` })
+    .where(eq(mentoringSlots.id, slotId))
 
   revalidatePath('/')
   return { success: true }
@@ -179,7 +221,7 @@ export async function createSlot(
 }
 
 /**
- * SPC deletes a slot — only allowed if it has no confirmed bookings.
+ * SPC deletes a slot - only allowed if it has no confirmed bookings.
  */
 export async function deleteSlot(slotId: string) {
   const slot = await db.query.mentoringSlots.findFirst({
