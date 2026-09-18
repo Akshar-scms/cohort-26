@@ -1,9 +1,8 @@
 'use client'
 
 import React from 'react'
-import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { UserButton, useUser } from '@clerk/nextjs'
+import { useUser, useClerk } from '@clerk/nextjs'
 import {
   LayoutDashboard,
   Users,
@@ -13,7 +12,7 @@ import {
   FileCheck2,
   Award,
   Video,
-  ChevronRight,
+  LogOut,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -40,6 +39,7 @@ interface SidebarProps {
 export function Sidebar({ currentTab = 'dashboard', onTabChange, role = 'STUDENT' }: SidebarProps) {
   const pathname = usePathname()
   const { user } = useUser()
+  const { signOut } = useClerk()
 
   const userName = user?.fullName || user?.firstName || 'Aarav Shah'
   const userInitials =
@@ -197,9 +197,13 @@ export function Sidebar({ currentTab = 'dashboard', onTabChange, role = 'STUDENT
             </span>
           </div>
         </div>
-        <div className="shrink-0 flex items-center">
-          <UserButton />
-        </div>
+        <button
+          onClick={() => signOut({ redirectUrl: '/sign-in' })}
+          className="p-1.5 rounded-lg text-[#6E6E78] hover:text-[#E5484D] hover:bg-[#18181B] transition-colors shrink-0"
+          title="Log out"
+        >
+          <LogOut className="w-4 h-4" />
+        </button>
       </div>
     </aside>
   )

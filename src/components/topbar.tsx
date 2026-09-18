@@ -2,7 +2,6 @@
 
 import React from 'react'
 import { Search, Bell } from 'lucide-react'
-import { UserButton, useUser } from '@clerk/nextjs'
 import { Button } from '@/components/ui/button'
 
 interface TopbarProps {
@@ -16,13 +15,6 @@ export function Topbar({
   role = 'STUDENT',
   onRoleToggle,
 }: TopbarProps) {
-  const { user } = useUser()
-
-  const initials =
-    user?.firstName && user?.lastName
-      ? `${user.firstName[0]}${user.lastName[0]}`
-      : (user?.firstName || 'AS').slice(0, 2).toUpperCase()
-
   return (
     <header className="sticky top-0 z-20 h-[56px] w-full bg-[#0A0A0B] border-b border-[#26262A] px-8 flex items-center justify-between">
       {/* Left: Breadcrumbs */}
@@ -81,11 +73,6 @@ export function Topbar({
         >
           <Bell className="w-4 h-4" />
         </Button>
-
-        {/* User Mini Avatar */}
-        <div className="w-7 h-7 rounded-full bg-[#18181B] border border-[#26262A] flex items-center justify-center font-mono text-[11px] font-medium text-[#EDEDEF]">
-          {initials}
-        </div>
       </div>
     </header>
   )

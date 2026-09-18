@@ -85,14 +85,22 @@ export function StudentDashboardView({
   const completedCount = checklistItems.filter((i) => i.completed).length
 
   useEffect(() => {
+    let isMounted = true
     if (!studentId) {
-      setLoadingBooking(false)
+      Promise.resolve().then(() => {
+        if (isMounted) setLoadingBooking(false)
+      })
       return
     }
     getStudentUpcomingBooking(studentId).then((b) => {
-      setUpcomingBooking(b)
-      setLoadingBooking(false)
+      if (isMounted) {
+        setUpcomingBooking(b)
+        setLoadingBooking(false)
+      }
     })
+    return () => {
+      isMounted = false
+    }
   }, [studentId])
 
   const slot = upcomingBooking?.slot

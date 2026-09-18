@@ -80,15 +80,19 @@ export function LiveMentoringSessionView({ spcId, spcName }: LiveMentoringSessio
   const now = new Date()
   const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
 
-  const load = () => {
-    setLoading(true)
-    getSessionStudents(spcId, todayIso).then((data) => {
+  const refreshData = async (initial = false) => {
+    if (initial) setLoading(true)
+    try {
+      const data = await getSessionStudents(spcId, todayIso)
       setSessions(data)
-      setLoading(false)
-    })
+    } finally {
+      if (initial) setLoading(false)
+    }
   }
 
-  useEffect(() => { load() }, [spcId])
+  useEffect(() => {
+    refreshData(true)
+  }, [spcId])
 
   // Sync editable fields when active session changes
   useEffect(() => {
@@ -107,44 +111,115 @@ export function LiveMentoringSessionView({ spcId, spcName }: LiveMentoringSessio
 
   const handleAddSkill = () => {
     if (!newSkillName.trim() || !student?.id) return
+    const skillName = newSkillName.trim()
+    const skillCat = newSkillCategory as any
+    const skillProf = newSkillProficiency
+    setNewSkillName('')
+
+    // Optimistic state update: Add skill to local session state immediately
+    const tempSkillId = `temp-${Date.now()}`
+    setSessions((prev) =>
+      prev.map((s, idx) => {
+        if (idx !== activeIndex) return s
+        const currentSkills = s.student?.skills || []
+        return {
+          ...s,
+          student: {
+            ...s.student,
+            skills: [
+              ...currentSkills,
+              {
+                id: tempSkillId,
+                name: skillName,
+                category: skillCat,
+                proficiency: skillProf,
+                isVerified: true,
+              },
+            ],
+          },
+        }
+      })
+    )
+
     startTransition(async () => {
-      await addSkill(student.id, newSkillName, newSkillCategory as any, newSkillProficiency)
-      setNewSkillName('')
-      load()
+      await addSkill(student.id, skillName, skillCat, skillProf)
+      refreshData(false)
     })
   }
 
   const handleRemoveSkill = (skillId: string) => {
+    // Optimistic removal
+    setSessions((prev) =>
+      prev.map((s, idx) => {
+        if (idx !== activeIndex) return s
+        return {
+          ...s,
+          student: {
+            ...s.student,
+            skills: (s.student?.skills || []).filter((sk: any) => sk.id !== skillId),
+          },
+        }
+      })
+    )
+
     startTransition(async () => {
       await removeSkill(skillId)
-      load()
+      refreshData(false)
     })
   }
 
   const handleAddQuestion = () => {
     if (!newQuestion.trim() || !active?.bookingId) return
+    const qText = newQuestion.trim()
+    setNewQuestion('')
+
+    const tempQId = `temp-${Date.now()}`
+    setSessions((prev) =>
+      prev.map((s, idx) => {
+        if (idx !== activeIndex) return s
+        return {
+          ...s,
+          questionsAsked: [
+            ...(s.questionsAsked || []),
+            { id: tempQId, question: qText },
+          ],
+        }
+      })
+    )
+
     startTransition(async () => {
-      await addSessionQuestion(active.bookingId, newQuestion)
-      setNewQuestion('')
-      load()
+      await addSessionQuestion(active.bookingId, qText)
+      refreshData(false)
     })
   }
 
   const handleRemoveQuestion = (qId: string) => {
+    setSessions((prev) =>
+      prev.map((s, idx) => {
+        if (idx !== activeIndex) return s
+        return {
+          ...s,
+          questionsAsked: (s.questionsAsked || []).filter((q: any) => q.id !== qId),
+        }
+      })
+    )
+
     startTransition(async () => {
       await removeSessionQuestion(qId)
-      load()
+      refreshData(false)
     })
   }
 
   const handleSaveNote = () => {
     if (!noteText.trim() || !student?.id) return
+    const savedNoteText = noteText.trim()
+    setNoteText('')
+
     startTransition(async () => {
-      await addSpcNote(student.id, spcId, noteText)
-      setNoteText('')
+      await addSpcNote(student.id, spcId, savedNoteText)
       setSaveSuccess(true)
       setTimeout(() => setSaveSuccess(false), 2000)
-      load()
+      refreshData(false)
     })
   }
 
@@ -159,7 +234,7 @@ export function LiveMentoringSessionView({ spcId, spcName }: LiveMentoringSessio
       })
       setSaveSuccess(true)
       setTimeout(() => setSaveSuccess(false), 2000)
-      load()
+      refreshData(false)
     })
   }
 
@@ -167,7 +242,7 @@ export function LiveMentoringSessionView({ spcId, spcName }: LiveMentoringSessio
     if (!active?.bookingId) return
     startTransition(async () => {
       await completeSession(active.bookingId)
-      load()
+      refreshData(false)
     })
   }
 
@@ -208,8 +283,11 @@ export function LiveMentoringSessionView({ spcId, spcName }: LiveMentoringSessio
   // ─── Main Console ─────────────────────────────────────────────
   return (
     <div className="w-full max-w-[1200px] mx-auto p-8 flex flex-col gap-6 relative">
-      {/* Floating Timer */}
-      <SessionTimer initialMinutes={active?.durationMinutes ?? 15} />
+      {/* Floating Draggable Timer */}
+      <SessionTimer
+        initialMinutes={active?.durationMinutes ?? 15}
+        studentName={studentUser?.name}
+      />
 
       {/* Top Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-xl bg-[#121214] border border-[#26262A]">
@@ -364,6 +442,7 @@ export function LiveMentoringSessionView({ spcId, spcName }: LiveMentoringSessio
                 >
                   <span>{skill.name}</span>
                   <span className="opacity-60">· {skill.proficiency.charAt(0) + skill.proficiency.slice(1).toLowerCase()}</span>
+                  {skill.isVerified && <CheckCircle2 className="w-3 h-3 text-[#30A46C]" aria-label="Verified" />}
                   <button onClick={() => handleRemoveSkill(skill.id)} className="ml-1 hover:opacity-100 opacity-50 transition-opacity">
                     ×
                   </button>
