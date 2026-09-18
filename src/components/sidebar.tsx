@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { usePathname } from 'next/navigation'
-import { useUser, useClerk } from '@clerk/nextjs'
+import { useUser, SignOutButton } from '@clerk/nextjs'
 import {
   LayoutDashboard,
   Users,
@@ -39,7 +39,6 @@ interface SidebarProps {
 export function Sidebar({ currentTab = 'dashboard', onTabChange, role = 'STUDENT' }: SidebarProps) {
   const pathname = usePathname()
   const { user } = useUser()
-  const { signOut } = useClerk()
 
   const userName = user?.fullName || user?.firstName || 'Aarav Shah'
   const userInitials =
@@ -197,13 +196,15 @@ export function Sidebar({ currentTab = 'dashboard', onTabChange, role = 'STUDENT
             </span>
           </div>
         </div>
-        <button
-          onClick={() => signOut({ redirectUrl: '/sign-in' })}
-          className="p-1.5 rounded-lg text-[#6E6E78] hover:text-[#E5484D] hover:bg-[#18181B] transition-colors shrink-0"
-          title="Log out"
-        >
-          <LogOut className="w-4 h-4" />
-        </button>
+        <SignOutButton redirectUrl="/">
+          <button
+            type="button"
+            className="p-1.5 rounded-lg text-[#6E6E78] hover:text-[#E5484D] hover:bg-[#18181B] transition-colors shrink-0 cursor-pointer"
+            title="Log out"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
+        </SignOutButton>
       </div>
     </aside>
   )

@@ -1,108 +1,128 @@
 'use client'
 
-import React, { useState } from 'react'
-import { SignInButton, SignUpButton } from '@clerk/nextjs'
-import { ShieldCheck, ArrowRight, Lock } from 'lucide-react'
+import React from 'react'
+import { SignInButton } from '@clerk/nextjs'
+import {
+  ArrowRight,
+  Sparkles,
+  ShieldCheck,
+  CalendarCheck,
+  Award,
+  Video,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 export function LoginScreenView() {
-  const [emailInput, setEmailInput] = useState('')
-
   return (
-    <div className="bg-dot-grid min-h-screen flex flex-col items-center justify-center p-4 selection:bg-[#6E56CF] selection:text-white font-sans antialiased text-[#EDEDEF]">
-      {/* Main Login Card (Linear/Vercel Aesthetic: 380px wide, #121214 bg, 1px #26262A border) */}
-      <main className="w-full max-w-[380px] bg-[#121214] border border-[#26262A] rounded-[12px] p-6 flex flex-col items-center">
-        {/* 1. Monogram Icon */}
-        <div
-          aria-label="Placement Hub Monogram"
-          className="w-8 h-8 rounded-[8px] bg-[#6E56CF] flex items-center justify-center select-none"
-        >
-          <span className="text-white text-[16px] font-semibold leading-none">
+    <div className="relative min-h-screen bg-[#0A0A0B] text-[#EDEDEF] flex flex-col justify-between selection:bg-[#6E56CF] selection:text-white font-sans antialiased overflow-hidden">
+      {/* Ambient background glow & subtle radial light */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-[#6E56CF]/12 rounded-full blur-[120px]" />
+        <div className="absolute bottom-[-10%] right-[10%] w-[500px] h-[400px] bg-[#0091FF]/8 rounded-full blur-[140px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(#26262A_1px,transparent_1px)] [background-size:24px_24px] opacity-25" />
+      </div>
+
+      {/* Top Navbar Header */}
+      <header className="relative z-10 w-full max-w-6xl mx-auto px-6 py-6 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-xl bg-[#6E56CF] flex items-center justify-center text-white font-semibold text-[15px] shadow-lg shadow-[#6E56CF]/25">
             P
-          </span>
-        </div>
-
-        {/* 2. Brand Title */}
-        <h1 className="text-[20px] leading-[26px] font-semibold text-[#EDEDEF] mt-3 tracking-tight text-center">
-          Placement Hub
-        </h1>
-
-        {/* 3. Subtext */}
-        <p className="text-[13px] text-[#A0A0AB] mt-1 text-center">
-          Sign in to continue
-        </p>
-
-        {/* Form Section */}
-        <div className="w-full mt-6 flex flex-col gap-3">
-          {/* Institutional Domain Warning / Badge */}
-          <div className="p-2.5 rounded-lg bg-[#18181B] border border-[#26262A] flex items-start gap-2 text-[11px] text-[#A0A0AB] leading-tight">
-            <Lock className="w-3.5 h-3.5 text-[#6E56CF] shrink-0 mt-0.5" />
-            <span>
-              Restricted to verified{' '}
-              <strong className="text-[#EDEDEF] font-mono">@nirmauni.ac.in</strong>{' '}
-              institutional accounts.
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[15px] font-semibold text-[#EDEDEF] tracking-tight">
+              Placement Hub
+            </span>
+            <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-[#18181B] border border-[#26262A] text-[#A0A0AB]">
+              MCA &apos;26
             </span>
           </div>
-
-          <div className="flex flex-col w-full text-left">
-            <label
-              className="text-[11px] uppercase tracking-wider text-[#6E6E78] font-medium"
-              htmlFor="email"
-            >
-              Institute Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={emailInput}
-              onChange={(e) => setEmailInput(e.target.value)}
-              placeholder="name@nirmauni.ac.in"
-              className="w-full h-9 bg-[#18181B] border border-[#26262A] rounded-[10px] text-[13px] text-[#EDEDEF] placeholder-[#6E6E78] px-3 mt-1 transition-colors hover:border-[#34343A] focus:outline-none focus:border-[#6E56CF] font-sans"
-            />
-          </div>
-
-          {/* Clerk Integrated Sign-In Trigger */}
-          <div className="mt-2 flex flex-col gap-2">
-            <SignInButton mode="modal">
-              <Button
-                variant="default"
-                className="w-full h-10 text-[14px] font-medium gap-2"
-              >
-                <span>Continue with Nirma Account</span>
-                <ArrowRight className="w-4 h-4" />
-              </Button>
-            </SignInButton>
-
-            <SignUpButton mode="modal">
-              <Button
-                variant="ghost"
-                className="w-full h-8 text-[12px] text-[#A0A0AB] hover:text-[#EDEDEF]"
-              >
-                New user? Request enrollment
-              </Button>
-            </SignUpButton>
-          </div>
         </div>
 
-        {/* Hairline Divider & Footer Subtext */}
-        <div className="w-full border-t border-[#26262A] mt-6 pt-4 flex items-center justify-center">
-          <span className="text-[11px] text-[#6E6E78] select-none font-sans">
-            MCA &apos;26 · Nirma University
+        <div className="flex items-center gap-2 text-[11px] font-mono text-[#6E6E78] bg-[#121214]/80 backdrop-blur border border-[#26262A] px-3 py-1.5 rounded-full">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#30A46C] animate-pulse" />
+          <span>Portal Live · Nirma University</span>
+        </div>
+      </header>
+
+      {/* Center Hero Section */}
+      <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 py-12 text-center max-w-4xl mx-auto">
+        {/* Subtle pill tag */}
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#121214] border border-[#6E56CF]/30 text-[#cbbeff] text-[12px] font-medium mb-6 shadow-sm shadow-[#6E56CF]/10">
+          <Sparkles className="w-3.5 h-3.5 text-[#6E56CF]" />
+          <span>Student Placement Cell · Cohort 2024–2026</span>
+        </div>
+
+        {/* Big Aesthetic Title */}
+        <h1 className="text-[38px] sm:text-[54px] md:text-[62px] font-bold tracking-tight leading-[1.1] text-[#EDEDEF] max-w-3xl">
+          Next-Gen Placement &amp; <br className="hidden sm:inline" />
+          <span className="bg-gradient-to-r from-[#cbbeff] via-[#9E8CFC] to-[#0091FF] bg-clip-text text-transparent">
+            Mentoring Command Center
           </span>
+        </h1>
+
+        {/* Subtitle / Description */}
+        <p className="mt-5 text-[15px] sm:text-[17px] text-[#A0A0AB] max-w-2xl leading-relaxed font-normal">
+          Accelerate your campus career with 1-on-1 offline SPC mentoring, verified technical skill assessments, and real-time recruitment tracking.
+        </p>
+
+        {/* Interactive Feel-Good CTA Button */}
+        <div className="mt-9 flex flex-col items-center gap-3">
+          <SignInButton mode="modal">
+            <button className="group relative inline-flex items-center justify-center gap-3 px-8 py-3.5 rounded-xl bg-gradient-to-r from-[#6E56CF] to-[#5842C3] hover:from-[#7C66DC] hover:to-[#6E56CF] text-white text-[15px] font-medium shadow-xl shadow-[#6E56CF]/25 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer border border-[#8E7CF7]/30">
+              <span className="tracking-wide">Sign In to Placement Portal</span>
+              <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" />
+            </button>
+          </SignInButton>
+
+          <span className="text-[12px] text-[#6E6E78] font-mono flex items-center gap-1.5">
+            <ShieldCheck className="w-3.5 h-3.5 text-[#30A46C]" />
+            Restricted to verified <strong className="text-[#A0A0AB]">@nirmauni.ac.in</strong> accounts
+          </span>
+        </div>
+
+        {/* Feature Highlights Glass Strip */}
+        <div className="mt-14 grid grid-cols-1 sm:grid-cols-3 gap-3.5 w-full max-w-2xl">
+          <div className="p-3.5 rounded-xl bg-[#121214]/70 border border-[#26262A] backdrop-blur-sm flex items-center gap-3 text-left">
+            <div className="w-8 h-8 rounded-lg bg-[#6E56CF]/15 border border-[#6E56CF]/30 flex items-center justify-center text-[#cbbeff] shrink-0">
+              <CalendarCheck className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="text-[13px] font-medium text-[#EDEDEF]">15-min Offline Slots</div>
+              <div className="text-[11px] text-[#6E6E78]">1-on-1 guidance with SPC</div>
+            </div>
+          </div>
+
+          <div className="p-3.5 rounded-xl bg-[#121214]/70 border border-[#26262A] backdrop-blur-sm flex items-center gap-3 text-left">
+            <div className="w-8 h-8 rounded-lg bg-[#FFB224]/15 border border-[#FFB224]/30 flex items-center justify-center text-[#FFB224] shrink-0">
+              <Award className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="text-[13px] font-medium text-[#EDEDEF]">Skill Verification</div>
+              <div className="text-[11px] text-[#6E6E78]">Verified technical badges</div>
+            </div>
+          </div>
+
+          <div className="p-3.5 rounded-xl bg-[#121214]/70 border border-[#26262A] backdrop-blur-sm flex items-center gap-3 text-left">
+            <div className="w-8 h-8 rounded-lg bg-[#0091FF]/15 border border-[#0091FF]/30 flex items-center justify-center text-[#0091FF] shrink-0">
+              <Video className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="text-[13px] font-medium text-[#EDEDEF]">Live Console</div>
+              <div className="text-[11px] text-[#6E6E78]">Real-time mock interview logs</div>
+            </div>
+          </div>
         </div>
       </main>
 
-      {/* System Status Micro-Indicator */}
-      <aside
-        aria-label="Portal System Operational"
-        className="mt-6 flex items-center gap-2 text-[#6E6E78] text-[11px] select-none font-sans"
-      >
-        <span
-          aria-hidden="true"
-          className="w-1.5 h-1.5 rounded-full bg-[#30A46C] shrink-0"
-        />
-        <span>MCA Placement Portal · All systems operational</span>
-      </aside>
+      {/* Footer */}
+      <footer className="relative z-10 w-full max-w-6xl mx-auto px-6 py-6 border-t border-[#26262A]/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-[12px] text-[#6E6E78]">
+        <div>
+          © 2026 Department of Computer Science and Engineering · Nirma University
+        </div>
+        <div className="font-mono text-[11px]">
+          MCA Batch 2024–2026 Placement System
+        </div>
+      </footer>
     </div>
   )
 }

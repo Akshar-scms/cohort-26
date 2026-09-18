@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { Sidebar } from '@/components/sidebar'
 import { Topbar } from '@/components/topbar'
 import { StudentDashboardView } from '@/components/views/student-dashboard-view'
+import { SpcDashboardView } from '@/components/views/spc-dashboard-view'
 import { SpcSlotsManagerView } from '@/components/views/spc-slots-manager-view'
 import { BookMentoringSlotView } from '@/components/views/book-mentoring-slot-view'
 import { StudentsDirectoryView } from '@/components/views/students-directory-view'
@@ -83,13 +84,21 @@ export function PlacementHubClient({
 
         <main className="flex-1">
           {currentTab === 'dashboard' && (
-            <StudentDashboardView
-              userId={userId}
-              userName={userName}
-              role={activeRole}
-              studentProfile={studentProfile}
-              onNavigateToBooking={() => setCurrentTab('book-slot')}
-            />
+            activeRole === 'SPC' ? (
+              <SpcDashboardView
+                userId={userId}
+                userName={userName}
+                onNavigate={(tab) => setCurrentTab(tab)}
+              />
+            ) : (
+              <StudentDashboardView
+                userId={userId}
+                userName={userName}
+                role={activeRole}
+                studentProfile={studentProfile}
+                onNavigateToBooking={() => setCurrentTab('book-slot')}
+              />
+            )
           )}
 
           {currentTab === 'book-slot' && activeRole === 'STUDENT' && (
