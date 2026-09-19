@@ -21,6 +21,9 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "Placement Hub - MCA '26 | Nirma University",
   description: "Centralized Placement & Mentoring Hub for MCA '26 Batch, Nirma University",
+  icons: {
+    icon: "/icon.png",
+  },
 }
 
 export default function RootLayout({
