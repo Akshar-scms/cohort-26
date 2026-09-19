@@ -150,10 +150,10 @@ export function BookMentoringSlotView({ userId, studentId }: BookMentoringSlotVi
   })
 
   return (
-    <div className="w-full max-w-[1200px] mx-auto p-8 flex flex-col gap-6">
+    <div className="w-full max-w-[1200px] mx-auto px-4 py-6 flex flex-col gap-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
       {/* Header */}
       <div className="flex flex-col gap-1">
-        <h1 className="text-[22px] font-semibold text-[#EDEDEF] tracking-tight">
+        <h1 className="text-[22px] font-semibold text-[#EDEDEF] tracking-tight break-words">
           Book a 1-on-1 Mentoring Slot
         </h1>
         <p className="text-[13px] text-[#A0A0AB]">
@@ -267,10 +267,10 @@ export function BookMentoringSlotView({ userId, studentId }: BookMentoringSlotVi
         {/* Right: Slots List for Selected Date */}
         <section className="flex-1 w-full flex flex-col">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-[16px] font-semibold text-[#EDEDEF]">
+            <h2 className="text-[16px] font-semibold text-[#EDEDEF] break-words">
               {selectedDateFormatted}
             </h2>
-            <span className="text-[13px] text-[#6E6E78] font-mono tabular-nums">
+            <span className="text-[13px] text-[#6E6E78] font-mono tabular-nums shrink-0">
               {loading ? '...' : `${slots.filter((s) => !s.isBooked).length} available / ${slots.length} total`}
             </span>
           </div>
@@ -281,7 +281,7 @@ export function BookMentoringSlotView({ userId, studentId }: BookMentoringSlotVi
               <span className="text-[13px]">Loading slots for {MONTH_NAMES[viewMonth]} {selectedDay}...</span>
             </div>
           ) : slots.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center gap-2 bg-[#121214] border border-[#26262A] rounded-xl p-8">
+            <div className="flex flex-col items-center justify-center py-10 text-center gap-2 bg-[#121214] border border-[#26262A] rounded-xl p-6">
               <CalendarIcon className="w-8 h-8 text-[#6E6E78]" />
               <div className="text-[15px] font-medium text-[#EDEDEF]">No Slots Opened for this Date</div>
               <p className="text-[12px] text-[#A0A0AB] max-w-sm">
@@ -293,10 +293,10 @@ export function BookMentoringSlotView({ userId, studentId }: BookMentoringSlotVi
               {slots.map((slot) => (
                 <div
                   key={slot.id}
-                  className="h-[80px] rounded-xl bg-[#121214] border border-[#26262A] px-5 flex items-center justify-between hover:border-[#34343A] transition-colors"
+                  className="rounded-xl bg-[#121214] border border-[#26262A] p-4 hover:border-[#34343A] transition-colors sm:p-5 sm:flex sm:items-center sm:justify-between sm:h-auto"
                 >
                   {/* Time */}
-                  <div className="w-[180px] flex flex-col shrink-0">
+                  <div className="flex flex-col shrink-0 mb-3 sm:mb-0 sm:w-[160px]">
                     <span className="font-mono text-[14px] font-medium text-[#EDEDEF] tracking-tight">
                       {formatTime(slot.startTime)} – {addMinutes(slot.startTime, slot.durationMinutes)}
                     </span>
@@ -306,20 +306,20 @@ export function BookMentoringSlotView({ userId, studentId }: BookMentoringSlotVi
                   </div>
 
                   {/* SPC + Location */}
-                  <div className="flex flex-col w-[220px]">
+                  <div className="flex flex-col gap-1 mb-3 sm:mb-0 sm:w-[200px]">
                     <span className="text-[13px] font-medium text-[#EDEDEF]">SPC: {slot.spcName}</span>
                     {slot.location ? (
-                      <div className="flex items-center gap-1 mt-0.5">
+                      <div className="flex items-center gap-1">
                         <MapPin className="w-3 h-3 text-[#6E56CF] shrink-0" />
                         <span className="text-[11px] text-[#A0A0AB] truncate">{slot.location}</span>
                       </div>
                     ) : (
-                      <span className="text-[11px] text-[#6E6E78] mt-0.5">Offline Venue TBA</span>
+                      <span className="text-[11px] text-[#6E6E78]">Offline Venue TBA</span>
                     )}
                   </div>
 
                   {/* Status Indicator */}
-                  <div className="flex items-center gap-2 w-[140px]">
+                  <div className="flex items-center gap-2 mb-3 sm:mb-0 sm:w-[120px]">
                     <span
                       className={`w-2 h-2 rounded-full ${
                         slot.isBookedByMe
@@ -339,25 +339,25 @@ export function BookMentoringSlotView({ userId, studentId }: BookMentoringSlotVi
                   </div>
 
                   {/* Action Button */}
-                  <div>
+                  <div className="w-full sm:w-auto">
                     {slot.isBookedByMe ? (
                       <Button
                         variant="outline"
                         size="sm"
-                        className="h-8 border-[#30A46C]/40 text-[#30A46C] hover:bg-[#30A46C]/10 cursor-default"
+                        className="w-full h-9 border-[#30A46C]/40 text-[#30A46C] hover:bg-[#30A46C]/10 cursor-default justify-center"
                       >
                         <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
                         Booked
                       </Button>
                     ) : slot.isBooked ? (
-                      <Button variant="ghost" size="sm" disabled className="h-8 text-[#6E6E78]">
+                      <Button variant="ghost" size="sm" disabled className="w-full h-9 text-[#6E6E78] justify-center">
                         Unavailable
                       </Button>
                     ) : (
                       <Button
                         variant="default"
                         size="sm"
-                        className="h-8 text-[12px] bg-[#6E56CF] hover:bg-[#7C66DC] text-white"
+                        className="w-full h-9 text-[12px] bg-[#6E56CF] hover:bg-[#7C66DC] text-white justify-center"
                         onClick={() => setBookingSlot(slot)}
                       >
                         Book Slot
@@ -373,7 +373,7 @@ export function BookMentoringSlotView({ userId, studentId }: BookMentoringSlotVi
 
       {/* Booking Modal */}
       <Dialog open={!!bookingSlot} onOpenChange={(open) => !open && setBookingSlot(null)}>
-        <DialogContent className="max-w-md bg-[#121214] border-[#26262A] text-[#EDEDEF]">
+        <DialogContent className="w-[calc(100%-2rem)] max-w-md bg-[#121214] border-[#26262A] text-[#EDEDEF] max-h-[calc(100vh-2rem)] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-[17px] text-[#EDEDEF]">
               Confirm 1-on-1 Mentoring Booking

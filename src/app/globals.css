@@ -66,9 +66,43 @@
   font-variant-numeric: tabular-nums;
 }
 
+html,
 body {
+  overflow-x: clip;
+}
+
+body {
+  min-width: 0;
   background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
   color-scheme: dark;
+}
+
+/* Prevent body scroll when mobile drawer is open */
+body.nav-open {
+  overflow: hidden;
+}
+
+button,
+a,
+input,
+textarea,
+select {
+  min-width: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Safe area padding for devices with notches */
+@supports (padding: env(safe-area-inset-bottom)) {
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+@supports not (overflow: clip) {
+  html,
+  body {
+    overflow-x: hidden;
+  }
 }

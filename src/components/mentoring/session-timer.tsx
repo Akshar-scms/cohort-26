@@ -140,7 +140,7 @@ export function SessionTimer({
           ref={minDragNodeRef}
           onClick={() => setIsMinimized(false)}
           className={cn(
-            'fixed bottom-6 right-6 z-50 flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-[#121214] border shadow-2xl cursor-grab active:cursor-grabbing transition-shadow hover:scale-105 select-none',
+            'fixed bottom-3 right-3 z-50 flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-[#121214] border shadow-2xl cursor-grab active:cursor-grabbing transition-shadow hover:scale-105 select-none sm:bottom-6 sm:right-6',
             statusColor
           )}
           title="Drag to reposition · Click to expand"
@@ -164,7 +164,7 @@ export function SessionTimer({
       <div
         ref={dragNodeRef}
         className={cn(
-          'fixed bottom-6 right-6 z-50 w-[295px] rounded-xl bg-[#121214]/95 border shadow-2xl p-4 flex flex-col gap-3 select-none backdrop-blur-md cursor-grab active:cursor-grabbing',
+          'fixed bottom-3 right-3 z-50 w-[min(295px,calc(100vw-1.5rem))] rounded-xl bg-[#121214]/95 border shadow-2xl p-4 flex flex-col gap-3 select-none backdrop-blur-md cursor-grab active:cursor-grabbing sm:bottom-6 sm:right-6',
           isUrgent ? 'border-[#E5484D]/70 shadow-[#E5484D]/10' : 'border-[#26262A]'
         )}
       >

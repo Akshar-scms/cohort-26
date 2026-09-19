@@ -61,10 +61,10 @@ export function StudentsDirectoryView({ spcId }: StudentsDirectoryViewProps) {
   const statusOptions = ['ALL', 'NOT_STARTED', 'PREPARATION', 'APPLIED', 'INTERVIEW', 'SHORTLISTED', 'OFFERED', 'PLACED']
 
   return (
-    <div className="w-full max-w-[1200px] mx-auto p-8 flex flex-col">
+    <div className="w-full max-w-[1200px] mx-auto px-4 py-6 flex flex-col sm:px-6 sm:py-8 lg:px-8 lg:py-10">
       {/* Header */}
       <div className="flex flex-col gap-1 mb-6">
-        <h1 className="text-[22px] font-semibold text-[#EDEDEF] tracking-tight">
+        <h1 className="text-[22px] font-semibold text-[#EDEDEF] tracking-tight break-words">
           Students Directory
         </h1>
         <p className="text-[13px] text-[#A0A0AB]">
@@ -122,74 +122,130 @@ export function StudentsDirectoryView({ spcId }: StudentsDirectoryViewProps) {
           </p>
         </div>
       ) : (
-        <div className="flex flex-col gap-2">
-          {/* Header row */}
-          <div className="grid grid-cols-[1fr_160px_100px_120px_100px] gap-4 px-4 py-2 text-[11px] uppercase tracking-wider text-[#6E6E78]">
-            <span>Student</span>
-            <span>Target Role</span>
-            <span>CGPA</span>
-            <span>Status</span>
-            <span className="text-right">Actions</span>
-          </div>
+        <div className="flex flex-col gap-3">
+          {/* Mobile Card View - hidden on lg+ */}
+          <div className="lg:hidden">
+            {filtered.map((student) => {
+              const status = STATUS_MAP[student.placementStatus] ?? STATUS_MAP.NOT_STARTED
 
-          {filtered.map((student) => {
-            const status = STATUS_MAP[student.placementStatus] ?? STATUS_MAP.NOT_STARTED
-            const topSkills = student.skills?.slice(0, 4) ?? []
-            const latestNote = student.notes?.[0]?.content ?? null
-
-            return (
-              <div
-                key={student.id}
-                className="grid grid-cols-[1fr_160px_100px_120px_100px] gap-4 items-center bg-[#121214] border border-[#26262A] rounded-xl px-4 py-3 hover:border-[#34343A] transition-colors"
-              >
-                {/* Student info */}
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-8 h-8 rounded-full bg-[#18181B] border border-[#26262A] flex items-center justify-center font-mono text-[11px] text-[#EDEDEF] font-medium shrink-0">
-                    {student.user?.name?.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2) ?? '??'}
+              return (
+                <div
+                  key={student.id}
+                  className="bg-[#121214] border border-[#26262A] rounded-xl p-4 hover:border-[#34343A] transition-colors"
+                >
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="w-9 h-9 rounded-full bg-[#18181B] border border-[#26262A] flex items-center justify-center font-mono text-[12px] text-[#EDEDEF] font-medium shrink-0">
+                      {student.user?.name?.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2) ?? '??'}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-[14px] font-medium text-[#EDEDEF] truncate">{student.user?.name ?? '—'}</span>
+                        <Badge variant={status.variant as any} dotColor={status.dot}>{status.label}</Badge>
+                      </div>
+                      <span className="text-[11px] text-[#6E6E78] font-mono truncate block mt-0.5">{student.user?.email ?? '—'}</span>
+                    </div>
                   </div>
-                  <div className="flex flex-col min-w-0">
-                    <span className="text-[13px] font-medium text-[#EDEDEF] truncate">{student.user?.name ?? '—'}</span>
-                    <span className="text-[11px] text-[#6E6E78] font-mono truncate">{student.user?.email ?? '—'}</span>
+                  <div className="grid grid-cols-2 gap-2 text-[11px] text-[#A0A0AB] mb-3">
+                    <div>
+                      <span className="text-[#6E6E78]">Target Role</span>
+                      <span className="text-[#EDEDEF] font-medium ml-2 truncate block">{student.targetRole ?? '—'}</span>
+                    </div>
+                    <div>
+                      <span className="text-[#6E6E78]">CGPA</span>
+                      <span className="font-mono text-[#EDEDEF] ml-2">{student.cgpa ?? '—'}</span>
+                    </div>
+                    <div>
+                      <span className="text-[#6E6E78]">Roll No</span>
+                      <span className="font-mono text-[#EDEDEF] ml-2">{student.rollNumber ?? '—'}</span>
+                    </div>
+                    <div>
+                      <span className="text-[#6E6E78]">Section</span>
+                      <span className="text-[#EDEDEF] ml-2">{student.section ?? '—'}</span>
+                    </div>
                   </div>
-                </div>
-
-                {/* Target role */}
-                <span className="text-[12px] text-[#A0A0AB] truncate">
-                  {student.targetRole ?? <span className="text-[#34343A]">—</span>}
-                </span>
-
-                {/* CGPA */}
-                <span className="text-[13px] font-mono text-[#EDEDEF]">
-                  {student.cgpa ?? <span className="text-[#34343A]">—</span>}
-                </span>
-
-                {/* Status badge */}
-                <div>
-                  <Badge variant={status.variant as any} dotColor={status.dot}>
-                    {status.label}
-                  </Badge>
-                </div>
-
-                {/* View button */}
-                <div className="flex justify-end">
                   <Button
                     variant="secondary"
                     size="sm"
-                    className="h-7 text-[11px] border-[#26262A]"
+                    className="w-full h-8 border-[#26262A] justify-center"
                     onClick={() => setSelectedStudent(student)}
                   >
-                    View
+                    View Details
                   </Button>
                 </div>
-              </div>
-            )
-          })}
+              )
+            })}
+          </div>
+
+          {/* Desktop Table View - hidden on mobile */}
+          <div className="hidden lg:block">
+            {/* Header row */}
+            <div className="grid grid-cols-[1fr_160px_100px_120px_100px] gap-4 px-4 py-2 text-[11px] uppercase tracking-wider text-[#6E6E78]">
+              <span>Student</span>
+              <span>Target Role</span>
+              <span>CGPA</span>
+              <span>Status</span>
+              <span className="text-right">Actions</span>
+            </div>
+
+            {filtered.map((student) => {
+              const status = STATUS_MAP[student.placementStatus] ?? STATUS_MAP.NOT_STARTED
+              const topSkills = student.skills?.slice(0, 4) ?? []
+              const latestNote = student.notes?.[0]?.content ?? null
+
+              return (
+                <div
+                  key={student.id}
+                  className="grid grid-cols-[1fr_160px_100px_120px_100px] gap-4 items-center bg-[#121214] border border-[#26262A] rounded-xl px-4 py-3 hover:border-[#34343A] transition-colors"
+                >
+                  {/* Student info */}
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded-full bg-[#18181B] border border-[#26262A] flex items-center justify-center font-mono text-[11px] text-[#EDEDEF] font-medium shrink-0">
+                      {student.user?.name?.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2) ?? '??'}
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-[13px] font-medium text-[#EDEDEF] truncate">{student.user?.name ?? '—'}</span>
+                      <span className="text-[11px] text-[#6E6E78] font-mono truncate">{student.user?.email ?? '—'}</span>
+                    </div>
+                  </div>
+
+                  {/* Target role */}
+                  <span className="text-[12px] text-[#A0A0AB] truncate">
+                    {student.targetRole ?? <span className="text-[#34343A]">—</span>}
+                  </span>
+
+                  {/* CGPA */}
+                  <span className="text-[13px] font-mono text-[#EDEDEF]">
+                    {student.cgpa ?? <span className="text-[#34343A]">—</span>}
+                  </span>
+
+                  {/* Status badge */}
+                  <div>
+                    <Badge variant={status.variant as any} dotColor={status.dot}>
+                      {status.label}
+                    </Badge>
+                  </div>
+
+                  {/* View button */}
+                  <div className="flex justify-end">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="h-7 text-[11px] border-[#26262A]"
+                      onClick={() => setSelectedStudent(student)}
+                    >
+                      View
+                    </Button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </div>
       )}
 
       {/* Student Detail Modal */}
       <Dialog open={!!selectedStudent} onOpenChange={(o) => !o && setSelectedStudent(null)}>
-        <DialogContent className="max-w-xl bg-[#1F1F23] border-[#26262A] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[calc(100%-2rem)] max-w-xl bg-[#1F1F23] border-[#26262A] max-h-[90vh] overflow-y-auto">
           {selectedStudent && (() => {
             const s = selectedStudent
             const status = STATUS_MAP[s.placementStatus] ?? STATUS_MAP.NOT_STARTED

@@ -148,10 +148,10 @@ export function SpcSlotsManagerView({ spcId }: SpcSlotsManagerViewProps) {
   })
 
   return (
-    <div className="w-full max-w-[1200px] mx-auto p-8 flex-1 flex flex-col gap-6">
+    <div className="w-full max-w-[1200px] mx-auto px-4 py-6 flex-1 flex flex-col gap-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
       {/* Header */}
       <div className="flex flex-col gap-1">
-        <h1 className="text-[22px] font-semibold text-[#EDEDEF] tracking-tight">
+        <h1 className="text-[22px] font-semibold text-[#EDEDEF] tracking-tight break-words">
           Manage 1-on-1 Mentoring Slots
         </h1>
         <p className="text-[13px] text-[#A0A0AB]">
@@ -280,7 +280,7 @@ export function SpcSlotsManagerView({ spcId }: SpcSlotsManagerViewProps) {
               <span className="text-[13px]">Loading slots for {MONTH_NAMES[viewMonth]} {selectedDay}...</span>
             </div>
           ) : slots.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center gap-2 bg-[#121214] border border-[#26262A] rounded-xl p-8">
+            <div className="flex flex-col items-center justify-center py-10 text-center gap-2 bg-[#121214] border border-[#26262A] rounded-xl p-6">
               <CalendarIcon className="w-8 h-8 text-[#6E6E78]" />
               <div className="text-[14px] font-medium text-[#EDEDEF]">No slots created for this date</div>
               <p className="text-[12px] text-[#A0A0AB] max-w-sm">
@@ -294,12 +294,12 @@ export function SpcSlotsManagerView({ spcId }: SpcSlotsManagerViewProps) {
                 return (
                   <div
                     key={slot.id}
-                    className="h-[80px] bg-[#121214] border border-[#26262A] rounded-xl px-5 flex items-center justify-between hover:border-[#34343A] transition-colors"
+                    className="bg-[#121214] border border-[#26262A] rounded-xl p-4 hover:border-[#34343A] transition-colors sm:p-5 sm:flex sm:items-center sm:justify-between sm:h-auto"
                   >
                     {/* Time + Location */}
-                    <div className="w-[200px] flex flex-col justify-center shrink-0">
+                    <div className="flex flex-col shrink-0 mb-3 sm:mb-0 sm:w-[160px]">
                       <span className="font-mono text-[13px] font-medium text-[#EDEDEF] tabular-nums">
-                        {formatTime(slot.startTime)} – {addMinutes(slot.startTime, slot.durationMinutes)}
+                        {formatTime(slot.startTime)} &ndash; {addMinutes(slot.startTime, slot.durationMinutes)}
                       </span>
                       {slot.location ? (
                         <div className="flex items-center gap-1 mt-0.5">
@@ -307,15 +307,15 @@ export function SpcSlotsManagerView({ spcId }: SpcSlotsManagerViewProps) {
                           <span className="text-[11px] text-[#A0A0AB] truncate">{slot.location}</span>
                         </div>
                       ) : (
-                        <span className="text-[11px] text-[#6E6E78] mt-0.5">15 min · Venue not specified</span>
+                        <span className="text-[11px] text-[#6E6E78] mt-0.5">15 min &middot; Venue not specified</span>
                       )}
                     </div>
 
                     {/* Booked student status */}
-                    <div className="flex items-center gap-3 w-[260px]">
+                    <div className="flex items-center gap-3 mb-3 sm:mb-0 sm:w-[200px]">
                       {isBooked ? (
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-7 h-7 rounded-full bg-[#18181B] border border-[#26262A] flex items-center justify-center font-mono text-[11px] text-[#EDEDEF] font-medium">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="w-7 h-7 rounded-full bg-[#18181B] border border-[#26262A] flex items-center justify-center font-mono text-[11px] text-[#EDEDEF] font-medium shrink-0">
                             {slot.bookedStudent.rollNumber
                               ? slot.bookedStudent.rollNumber.slice(-3)
                               : slot.bookedStudent.name.slice(0, 2).toUpperCase()}
@@ -331,16 +331,16 @@ export function SpcSlotsManagerView({ spcId }: SpcSlotsManagerViewProps) {
                         </div>
                       ) : (
                         <div className="flex items-center gap-2 text-[#6E6E78] text-[12px]">
-                          <span className="w-2 h-2 rounded-full bg-[#EDEDEF]" />
+                          <span className="w-2 h-2 rounded-full bg-[#EDEDEF] shrink-0" />
                           <span>Open for booking</span>
                         </div>
                       )}
                     </div>
 
                     {/* Action */}
-                    <div>
+                    <div className="w-full sm:w-auto">
                       {isBooked ? (
-                        <span className="text-[11px] font-mono text-[#30A46C] bg-[#30A46C]/10 border border-[#30A46C]/30 px-2.5 py-1 rounded-full">
+                        <span className="text-[11px] font-mono text-[#30A46C] bg-[#30A46C]/10 border border-[#30A46C]/30 px-2.5 py-1 rounded-full inline-block text-center">
                           Booked
                         </span>
                       ) : (
@@ -349,7 +349,7 @@ export function SpcSlotsManagerView({ spcId }: SpcSlotsManagerViewProps) {
                           size="sm"
                           onClick={() => handleDeleteSlot(slot.id)}
                           disabled={isPending}
-                          className="h-8 text-[#6E6E78] hover:text-[#E5484D] hover:bg-[#E5484D]/10"
+                          className="w-full h-9 text-[#6E6E78] hover:text-[#E5484D] hover:bg-[#E5484D]/10 justify-center"
                         >
                           <Trash2 className="w-3.5 h-3.5 mr-1" />
                           Delete
@@ -366,7 +366,7 @@ export function SpcSlotsManagerView({ spcId }: SpcSlotsManagerViewProps) {
 
       {/* Add Slot Dialog */}
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-        <DialogContent className="max-w-md bg-[#121214] border-[#26262A] text-[#EDEDEF]">
+        <DialogContent className="w-[calc(100%-2rem)] max-w-md bg-[#121214] border-[#26262A] text-[#EDEDEF] max-h-[calc(100vh-2rem)] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-[17px] text-[#EDEDEF]">
               Create 1-on-1 Mentoring Slot

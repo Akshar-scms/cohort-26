@@ -4,7 +4,7 @@ export default function Loading() {
   return (
     <div className="min-h-screen bg-[#0A0A0B] text-[#EDEDEF] flex">
       {/* Sidebar Skeleton */}
-      <aside className="fixed top-0 left-0 h-screen w-[240px] z-30 bg-[#121214] border-r border-[#26262A] flex flex-col justify-between p-3 animate-pulse">
+      <aside className="fixed top-0 left-0 h-screen w-[240px] z-30 hidden md:flex flex-col justify-between p-3 animate-pulse">
         <div className="flex flex-col gap-5">
           <div className="flex items-center gap-2.5 px-2 pt-1 pb-1">
             <div className="w-[28px] h-[28px] rounded-lg bg-[#26262A]" />
@@ -32,9 +32,9 @@ export default function Loading() {
       </aside>
 
       {/* Main Content Area Skeleton */}
-      <div className="pl-[240px] flex-1 flex flex-col min-h-screen bg-[#0A0A0B]">
+      <div className="flex-1 flex flex-col min-h-screen min-w-0 bg-[#0A0A0B] md:pl-[240px]">
         {/* Topbar Skeleton */}
-        <header className="h-12 border-b border-[#26262A] px-6 flex items-center justify-between bg-[#121214]/60 backdrop-blur-md">
+        <header className="h-12 border-b border-[#26262A] px-4 flex items-center justify-between bg-[#121214]/60 backdrop-blur-md sm:px-6">
           <div className="w-32 h-4 bg-[#26262A] rounded animate-pulse" />
           <div className="flex items-center gap-3">
             <div className="w-24 h-6 bg-[#26262A] rounded-full animate-pulse" />
@@ -43,8 +43,8 @@ export default function Loading() {
         </header>
 
         {/* Dashboard Skeleton */}
-        <main className="flex-1 w-full max-w-[1200px] mx-auto p-8 flex flex-col gap-6 animate-pulse">
-          <div className="flex items-center justify-between">
+        <main className="flex-1 w-full max-w-[1200px] mx-auto px-4 py-6 flex flex-col gap-6 animate-pulse sm:px-6 sm:py-8 lg:px-8">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div className="flex flex-col gap-2">
               <div className="w-48 h-7 bg-[#18181B] rounded-md" />
               <div className="w-72 h-3.5 bg-[#18181B] rounded-md" />

@@ -36,7 +36,6 @@ export default async function PlacementHubPage() {
     <PlacementHubClient
       userId={clerkUser.id}
       userName={userName}
-      userEmail={primaryEmail}
       role={role}
       studentProfile={userWithProfile?.student ?? null}
     />

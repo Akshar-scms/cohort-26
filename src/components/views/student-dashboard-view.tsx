@@ -10,16 +10,48 @@ import {
   Clock,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { Card } from '@/components/ui/card'
+import { Badge, type BadgeProps } from '@/components/ui/badge'
 import { getStudentUpcomingBooking } from '@/app/actions/slot-actions'
 
+interface StudentProfile {
+  id: string
+  cgpa: number | string | null
+  skills: Array<{ name: string }>
+  placementStatus: string
+  githubUrl: string | null
+  phone: string | null
+  linkedinUrl: string | null
+  resumeUrl: string | null
+  targetRole: string | null
+  bio: string | null
+  enrollmentNumber: string | null
+}
+
+interface UpcomingBooking {
+  slot: {
+    spc: { name: string } | null
+    slotDate: string
+    startTime: string
+    location: string | null
+    durationMinutes: number
+  }
+}
+
 interface StudentDashboardViewProps {
-  userId: string
   userName: string
   role: 'SPC' | 'STUDENT'
   studentProfile: Record<string, unknown> | null
   onNavigateToBooking?: () => void
+}
+
+function isStudentProfile(profile: unknown): profile is StudentProfile {
+  return (
+    typeof profile === 'object' &&
+    profile !== null &&
+    'id' in profile &&
+    typeof (profile as Record<string, unknown>).id === 'string'
+  )
 }
 
 const PLACEMENT_STATUS_LABELS: Record<string, { label: string; variant: string; dot: string }> = {
@@ -54,32 +86,34 @@ function formatDate(dateStr: string) {
 
 function profileCompleteness(profile: Record<string, unknown> | null): number {
   if (!profile) return 0
-  const fields = ['cgpa', 'phone', 'linkedinUrl', 'githubUrl', 'resumeUrl', 'targetRole', 'bio', 'enrollmentNumber']
+  const isProfile = isStudentProfile(profile)
+  if (!isProfile) return 0
+  const fields: (keyof StudentProfile)[] = ['cgpa', 'phone', 'linkedinUrl', 'githubUrl', 'resumeUrl', 'targetRole', 'bio', 'enrollmentNumber']
   const filled = fields.filter((f) => !!profile[f]).length
   return Math.round((filled / fields.length) * 100)
 }
 
 export function StudentDashboardView({
-  userId,
   userName,
   role,
   studentProfile,
   onNavigateToBooking,
 }: StudentDashboardViewProps) {
-  const [upcomingBooking, setUpcomingBooking] = useState<any>(null)
+  const [upcomingBooking, setUpcomingBooking] = useState<UpcomingBooking | null>(null)
   const [loadingBooking, setLoadingBooking] = useState(true)
 
-  const studentId = (studentProfile as any)?.id ?? null
-  const skillCount = (studentProfile as any)?.skills?.length ?? 0
-  const placementStatus = (studentProfile as any)?.placementStatus ?? 'NOT_STARTED'
+  const isProfile = isStudentProfile(studentProfile)
+  const studentId = isProfile ? studentProfile.id : null
+  const skillCount = isProfile ? studentProfile.skills.length : 0
+  const placementStatus = isProfile ? studentProfile.placementStatus : 'NOT_STARTED'
   const statusInfo = PLACEMENT_STATUS_LABELS[placementStatus] ?? PLACEMENT_STATUS_LABELS.NOT_STARTED
   const completeness = profileCompleteness(studentProfile)
 
   const checklistItems = [
     { text: 'Book 1-on-1 mentoring slot with SPC', completed: !!upcomingBooking },
-    { text: 'Verify academic CGPA during session', completed: !!(studentProfile as any)?.cgpa },
+    { text: 'Verify academic CGPA during session', completed: isProfile ? !!studentProfile.cgpa : false },
     { text: 'Have SPC verify technical skills', completed: skillCount > 0 },
-    { text: 'Link GitHub profile', completed: !!(studentProfile as any)?.githubUrl },
+    { text: 'Link GitHub profile', completed: isProfile ? !!studentProfile.githubUrl : false },
     { text: 'Complete mock interview prep', completed: placementStatus === 'PLACED' || placementStatus === 'OFFERED' },
   ]
   const completedCount = checklistItems.filter((i) => i.completed).length
@@ -111,11 +145,11 @@ export function StudentDashboardView({
   const durationMins = slot?.durationMinutes ?? 15
 
   return (
-    <div className="w-full max-w-[1200px] mx-auto p-8 flex flex-col gap-6">
+    <div className="w-full max-w-[1200px] mx-auto px-4 py-6 flex flex-col gap-6 sm:px-6 sm:py-8 lg:px-8">
       {/* Header */}
-      <div className="flex items-baseline justify-between pt-1">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between pt-1">
         <div>
-          <h1 className="text-[24px] font-semibold text-[#EDEDEF] tracking-tight">
+          <h1 className="text-[24px] font-semibold text-[#EDEDEF] tracking-tight break-words">
             {getGreeting()}, {userName.split(' ')[0]}
           </h1>
           <p className="text-[12px] text-[#A0A0AB] mt-0.5">
@@ -124,7 +158,7 @@ export function StudentDashboardView({
               : 'Student Portal · Your profile is updated during 1-on-1 mentoring sessions.'}
           </p>
         </div>
-        <div className="text-[13px] text-[#A0A0AB] font-mono">
+        <div className="text-[13px] text-[#A0A0AB] font-mono sm:text-right">
           {new Date().toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })} · MCA &apos;26
         </div>
       </div>
@@ -182,7 +216,7 @@ export function StudentDashboardView({
             Placement Status
           </div>
           <div className="flex items-center">
-            <Badge variant={statusInfo.variant as any} dotColor={statusInfo.dot}>
+            <Badge variant={statusInfo.variant as BadgeProps['variant']} dotColor={statusInfo.dot}>
               {statusInfo.label}
             </Badge>
           </div>
@@ -199,13 +233,13 @@ export function StudentDashboardView({
       </div>
 
       {/* 2-Column: Booking card + Checklist */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-start">
         {/* Booking Card */}
-        <Card className="lg:col-span-2 bg-[#121214] border-[#26262A] flex flex-col justify-between overflow-hidden">
+        <Card className="md:col-span-2 bg-[#121214] border-[#26262A] flex flex-col justify-between overflow-hidden">
           <div className="p-6 flex flex-col gap-5">
             {upcomingBooking && spcName ? (
               <>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-3 sm:flex-row sm:flex-nowrap sm:items-center sm:justify-between">
                   <span className="font-mono text-[13px] text-[#EDEDEF] font-medium">
                     {slotDate ? formatDate(slotDate) : '—'} · {slotTime ? formatTime(slotTime) : '—'}
                   </span>
@@ -214,7 +248,7 @@ export function StudentDashboardView({
                   </Badge>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                   <div className="w-9 h-9 rounded-full bg-[#18181B] border border-[#26262A] flex items-center justify-center text-[#EDEDEF] text-[12px] font-medium font-mono shrink-0">
                     {spcName
                       .split(' ')
@@ -223,19 +257,19 @@ export function StudentDashboardView({
                       .join('')
                       .toUpperCase()}
                   </div>
-                  <div className="flex flex-col">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[14px] font-medium text-[#EDEDEF]">
+                  <div className="flex min-w-0 flex-1 flex-col">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="min-w-0 text-[14px] font-medium text-[#EDEDEF] break-words">
                         {spcName}
                       </span>
-                      <span className="px-2 h-[20px] inline-flex items-center rounded-full border border-[#26262A] text-[11px] text-[#A0A0AB]">
+                      <span className="shrink-0 px-2 h-[20px] inline-flex items-center rounded-full border border-[#26262A] text-[11px] text-[#A0A0AB]">
                         SPC Coordinator
                       </span>
                     </div>
                     {slotLocation ? (
                       <div className="flex items-center gap-1 mt-0.5">
-                        <MapPin className="w-3 h-3 text-[#6E56CF]" />
-                        <span className="text-[11px] text-[#A0A0AB]">{slotLocation}</span>
+                        <MapPin className="w-3 h-3 text-[#6E56CF] shrink-0" />
+                        <span className="min-w-0 text-[11px] text-[#A0A0AB] break-words">{slotLocation}</span>
                       </div>
                     ) : (
                       <span className="text-[11px] text-[#6E6E78]">
@@ -267,10 +301,10 @@ export function StudentDashboardView({
             )}
           </div>
 
-          <div className="p-5 pt-3 border-t border-[#26262A] bg-[#121214] flex items-center gap-3">
+          <div className="p-4 pt-3 border-t border-[#26262A] bg-[#121214] flex items-center gap-3 sm:p-5">
             <Button
               variant="default"
-              className="gap-1.5 text-[13px]"
+              className="w-full sm:w-auto gap-1.5 text-[13px]"
               onClick={onNavigateToBooking}
             >
               <span>{upcomingBooking ? 'View / Manage Slots' : 'Book a Session'}</span>
@@ -287,7 +321,7 @@ export function StudentDashboardView({
             </h2>
             <div className="flex flex-col gap-3">
               {checklistItems.map((item, idx) => (
-                <div key={idx} className="flex items-center gap-3">
+                <div key={idx} className="flex min-w-0 items-center gap-3">
                   {item.completed ? (
                     <div className="w-4 h-4 rounded bg-[#6E56CF] flex items-center justify-center text-white shrink-0">
                       <Check className="w-3 h-3 stroke-[3]" />
@@ -296,7 +330,7 @@ export function StudentDashboardView({
                     <div className="w-4 h-4 rounded border border-[#34343A] bg-[#121214] shrink-0" />
                   )}
                   <span
-                    className={`text-[13px] ${
+                    className={`min-w-0 text-[13px] break-words ${
                       item.completed ? 'text-[#6E6E78] line-through' : 'text-[#EDEDEF]'
                     }`}
                   >
@@ -314,14 +348,14 @@ export function StudentDashboardView({
 
       {/* Notice */}
       <Card className="bg-[#121214] border-[#26262A] p-5">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-[#6E56CF]" />
-            <h3 className="text-[14px] font-semibold text-[#EDEDEF]">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-3">
+          <div className="flex min-w-0 items-center gap-2">
+            <Sparkles className="w-4 h-4 text-[#6E56CF] shrink-0" />
+            <h3 className="min-w-0 text-[14px] font-semibold text-[#EDEDEF] break-words">
               MCA &apos;26 Mentoring Guidelines
             </h3>
           </div>
-          <span className="text-[11px] text-[#6E6E78]">Placement Cell · Nirma University</span>
+          <span className="shrink-0 text-[11px] text-[#6E6E78]">Placement Cell · Nirma University</span>
         </div>
         <div className="text-[13px] text-[#A0A0AB] leading-relaxed">
           Each candidate is allocated one 15-minute 1-on-1 mentoring slot per cycle. Ensure your resume and project repository links are ready before your session begins.

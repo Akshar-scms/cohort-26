@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import { useUser, SignOutButton } from '@clerk/nextjs'
 import {
@@ -13,6 +13,7 @@ import {
   Award,
   Video,
   LogOut,
+  X,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -34,9 +35,17 @@ interface SidebarProps {
   currentTab?: string
   onTabChange?: (tab: string) => void
   role?: 'SPC' | 'STUDENT'
+  mobileOpen?: boolean
+  onMobileOpenChange?: (open: boolean) => void
 }
 
-export function Sidebar({ currentTab = 'dashboard', onTabChange, role = 'STUDENT' }: SidebarProps) {
+export function Sidebar({
+  currentTab = 'dashboard',
+  onTabChange,
+  role = 'STUDENT',
+  mobileOpen = false,
+  onMobileOpenChange,
+}: SidebarProps) {
   const pathname = usePathname()
   const { user } = useUser()
 
@@ -116,9 +125,54 @@ export function Sidebar({ currentTab = 'dashboard', onTabChange, role = 'STUDENT
     },
   ]
 
+  const handleTabChange = (tab: string) => {
+    onTabChange?.(tab)
+    onMobileOpenChange?.(false)
+  }
+
+  // Escape key closes mobile drawer + body scroll lock
+  useEffect(() => {
+    if (!mobileOpen) return
+    document.body.classList.add('nav-open')
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onMobileOpenChange?.(false)
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      document.body.classList.remove('nav-open')
+    }
+  }, [mobileOpen, onMobileOpenChange])
+
   return (
-    <aside className="fixed top-0 left-0 h-screen w-[240px] z-30 bg-[#121214] border-r border-[#26262A] flex flex-col justify-between p-3 select-none">
-      {/* Top Section */}
+    <>
+      {mobileOpen && (
+        <button
+          type="button"
+          aria-label="Close navigation"
+          onClick={() => onMobileOpenChange?.(false)}
+          className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm md:hidden"
+        />
+      )}
+
+      <aside
+        className={cn(
+          'fixed inset-y-0 left-0 z-50 w-[260px] max-w-[85vw] bg-[#121214] border-r border-[#26262A] flex flex-col justify-between p-3 select-none translate-x-[-100%] transition-transform duration-200 md:z-30 md:w-[240px] md:max-w-none md:translate-x-0',
+          mobileOpen && 'translate-x-0'
+        )}
+      >
+        <button
+          type="button"
+          aria-label="Close navigation"
+          onClick={() => onMobileOpenChange?.(false)}
+          className="md:hidden absolute right-3 top-3 p-2 rounded-lg text-[#A0A0AB] hover:bg-[#18181B] hover:text-[#EDEDEF]"
+        >
+          <X className="w-4 h-4" />
+        </button>
+
+        {/* Top Section */}
       <div className="flex flex-col gap-5">
         {/* Brand */}
         <div className="flex items-center gap-2.5 px-2 pt-1 pb-1">
@@ -157,7 +211,7 @@ export function Sidebar({ currentTab = 'dashboard', onTabChange, role = 'STUDENT
                   return (
                     <button
                       key={item.id}
-                      onClick={() => onTabChange && onTabChange(item.id)}
+                      onClick={() => handleTabChange(item.id)}
                       className={cn(
                         'flex items-center gap-2.5 h-[34px] px-2.5 rounded-lg text-[13px] font-medium transition-colors text-left w-full cursor-pointer',
                         isActive
@@ -207,5 +261,6 @@ export function Sidebar({ currentTab = 'dashboard', onTabChange, role = 'STUDENT
         </SignOutButton>
       </div>
     </aside>
+    </>
   )
 }

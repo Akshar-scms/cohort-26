@@ -38,7 +38,7 @@ export function LoginScreenView() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 text-[11px] font-mono text-[#6E6E78] bg-[#121214]/80 backdrop-blur border border-[#26262A] px-3 py-1.5 rounded-full">
+        <div className="hidden md:flex items-center gap-2 text-[11px] font-mono text-[#6E6E78] bg-[#121214]/80 backdrop-blur border border-[#26262A] px-3 py-1.5 rounded-full">
           <span className="w-1.5 h-1.5 rounded-full bg-[#30A46C] animate-pulse" />
           <span>Portal Live · Nirma University</span>
         </div>
@@ -49,7 +49,7 @@ export function LoginScreenView() {
         {/* Subtle pill tag */}
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#121214] border border-[#6E56CF]/30 text-[#cbbeff] text-[12px] font-medium mb-6 shadow-sm shadow-[#6E56CF]/10">
           <Sparkles className="w-3.5 h-3.5 text-[#6E56CF]" />
-          <span>Student Placement Cell · Cohort 2024–2026</span>
+          <span>Student Placement Cell · Cohort 2026–2028</span>
         </div>
 
         {/* Big Aesthetic Title */}
@@ -68,7 +68,7 @@ export function LoginScreenView() {
         {/* Interactive Feel-Good CTA Button */}
         <div className="mt-9 flex flex-col items-center gap-3">
           <SignInButton mode="modal">
-            <button className="group relative inline-flex items-center justify-center gap-3 px-8 py-3.5 rounded-xl bg-gradient-to-r from-[#6E56CF] to-[#5842C3] hover:from-[#7C66DC] hover:to-[#6E56CF] text-white text-[15px] font-medium shadow-xl shadow-[#6E56CF]/25 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer border border-[#8E7CF7]/30">
+            <button className="group relative w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-3.5 rounded-xl bg-gradient-to-r from-[#6E56CF] to-[#5842C3] hover:from-[#7C66DC] hover:to-[#6E56CF] text-white text-[15px] font-medium shadow-xl shadow-[#6E56CF]/25 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer border border-[#8E7CF7]/30">
               <span className="tracking-wide">Sign In to Placement Portal</span>
               <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" />
             </button>
@@ -115,12 +115,12 @@ export function LoginScreenView() {
       </main>
 
       {/* Footer */}
-      <footer className="relative z-10 w-full max-w-6xl mx-auto px-6 py-6 border-t border-[#26262A]/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-[12px] text-[#6E6E78]">
+      <footer className="relative z-10 w-full max-w-6xl mx-auto px-6 py-6 border-t border-[#26262A]/60 flex flex-col sm:flex-row items-center justify-center sm:justify-between gap-3 text-center text-[12px] text-[#6E6E78]">
         <div>
           © 2026 Department of Computer Science and Engineering · Nirma University
         </div>
         <div className="font-mono text-[11px]">
-          MCA Batch 2024–2026 Placement System
+          MCA Batch 2026–2028 Placement System
         </div>
       </footer>
     </div>

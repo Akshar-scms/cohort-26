@@ -259,7 +259,7 @@ export function LiveMentoringSessionView({ spcId, spcName }: LiveMentoringSessio
   // ─── No sessions today ────────────────────────────────────────
   if (sessions.length === 0) {
     return (
-      <div className="w-full max-w-[1200px] mx-auto p-8">
+      <div className="w-full max-w-[1200px] mx-auto px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
         <div className="p-5 rounded-xl bg-[#121214] border border-[#26262A] mb-6 flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-[#6E56CF]/15 border border-[#6E56CF]/40 flex items-center justify-center text-[#cbbeff]">
             <User className="w-5 h-5" />
@@ -269,7 +269,7 @@ export function LiveMentoringSessionView({ spcId, spcName }: LiveMentoringSessio
             <p className="text-[12px] text-[#A0A0AB] font-mono mt-0.5">No booked sessions for today · {todayIso}</p>
           </div>
         </div>
-        <Card className="bg-[#121214] border-[#26262A] p-10 text-center flex flex-col items-center gap-3">
+        <Card className="bg-[#121214] border-[#26262A] p-6 text-center flex flex-col items-center gap-3 sm:p-10">
           <BookOpen className="w-8 h-8 text-[#34343A]" />
           <div className="text-[15px] font-medium text-[#EDEDEF]">No sessions scheduled for today</div>
           <p className="text-[12px] text-[#A0A0AB]">
@@ -282,7 +282,7 @@ export function LiveMentoringSessionView({ spcId, spcName }: LiveMentoringSessio
 
   // ─── Main Console ─────────────────────────────────────────────
   return (
-    <div className="w-full max-w-[1200px] mx-auto p-8 flex flex-col gap-6 relative">
+    <div className="w-full max-w-[1200px] mx-auto px-4 py-6 flex flex-col gap-6 relative sm:px-6 sm:py-8 lg:px-8 lg:py-10">
       {/* Floating Draggable Timer */}
       <SessionTimer
         initialMinutes={active?.durationMinutes ?? 15}
@@ -307,13 +307,13 @@ export function LiveMentoringSessionView({ spcId, spcName }: LiveMentoringSessio
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             variant={saveSuccess ? 'outline' : 'default'}
             size="sm"
             onClick={handleSaveProfile}
             disabled={isPending}
-            className={saveSuccess ? 'border-[#30A46C]/40 text-[#30A46C]' : ''}
+            className={`flex-1 sm:flex-none h-9 ${saveSuccess ? 'border-[#30A46C]/40 text-[#30A46C]' : ''}`}
           >
             {saveSuccess ? (
               <><CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />Saved</>
@@ -323,7 +323,7 @@ export function LiveMentoringSessionView({ spcId, spcName }: LiveMentoringSessio
               <><Save className="w-3.5 h-3.5 mr-1.5" />Save Profile</>
             )}
           </Button>
-          <Button variant="outline" size="sm" onClick={handleCompleteSession} disabled={isPending}>
+          <Button variant="outline" size="sm" onClick={handleCompleteSession} disabled={isPending} className="flex-1 sm:flex-none h-9">
             Complete Session
           </Button>
         </div>
