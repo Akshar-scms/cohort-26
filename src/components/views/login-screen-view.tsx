@@ -11,6 +11,9 @@ import {
   Video,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import Image from 'next/image'
+import VinayCodesLogo from '../../../public/vc.png';
+import Link from 'next/link'
 
 export function LoginScreenView() {
   return (
@@ -116,11 +119,11 @@ export function LoginScreenView() {
 
       {/* Footer */}
       <footer className="relative z-10 w-full max-w-6xl mx-auto px-6 py-6 border-t border-[#26262A]/60 flex flex-col sm:flex-row items-center justify-center sm:justify-between gap-3 text-center text-[12px] text-[#6E6E78]">
-        <div>
-          © 2026 Department of Computer Science and Engineering · Nirma University
+        <div className='flex items-center gap-2'>
+          © 2026 Vinay Codes made with LLMs and ❤️ <Link href="https://vinay-th.tech" target="_blank" rel="noopener noreferrer"><Image width={80} height={80} src={VinayCodesLogo} alt="Vinay Codes Logo" /></Link>
         </div>
         <div className="font-mono text-[11px]">
-          MCA Batch 2026–2028 Placement System
+          ITNU MCA Batch 2026–2028 Placement Hub
         </div>
       </footer>
     </div>
